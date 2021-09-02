@@ -2,13 +2,13 @@
 
 namespace BedWars\shop\item;
 
-use pocketmine\item\ItemFactory;
-use pocketmine\item\ItemIds;
+use pocketmine\block\VanillaBlocks;
+use pocketmine\item\VanillaItems;
 
 class TNT extends BedWarsItem
 {
 	public function __construct()
 	{
-		parent::__construct(ItemFactory::get(ItemIds::TNT), ItemFactory::get(ItemIds::IRON_INGOT, 0, 16), "TNT", "textures/blocks/tnt_side");
+		parent::__construct(VanillaBlocks::TNT()->asItem(), VanillaItems::IRON_INGOT()->setCount(16), "TNT", "textures/blocks/tnt_side");
 	}
 }

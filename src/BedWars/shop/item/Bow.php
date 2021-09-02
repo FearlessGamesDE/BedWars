@@ -2,29 +2,22 @@
 
 namespace BedWars\shop\item;
 
-use pocketmine\item\enchantment\Enchantment;
 use pocketmine\item\enchantment\EnchantmentInstance;
-use pocketmine\item\ItemFactory;
-use pocketmine\item\ItemIds;
+use pocketmine\item\enchantment\VanillaEnchantments;
+use pocketmine\item\VanillaItems;
 
 class Bow extends TieredBedWarsItem
 {
 	public function __construct()
 	{
-		$last = ItemFactory::get(ItemIds::BOW);
-		$last->addEnchantment(new EnchantmentInstance(Enchantment::getEnchantment(Enchantment::PUNCH), 2));
-
-		$last2 = ItemFactory::get(ItemIds::BOW);
-		$last2->addEnchantment(new EnchantmentInstance(Enchantment::getEnchantment(Enchantment::POWER), 2));
-
 		parent::__construct([
-			ItemFactory::get(ItemIds::BOW),
-			$last2,
-			$last
+			VanillaItems::BOW(),
+			VanillaItems::BOW()->addEnchantment(new EnchantmentInstance(VanillaEnchantments::POWER(), 2)),
+			VanillaItems::BOW()->addEnchantment(new EnchantmentInstance(VanillaEnchantments::PUNCH(), 2))
 		], [
-			ItemFactory::get(ItemIds::IRON_INGOT, 0, 64),
-			ItemFactory::get(ItemIds::DIAMOND, 0, 5),
-			ItemFactory::get(ItemIds::DIAMOND, 0, 12)
+			VanillaItems::IRON_INGOT()->setCount(64),
+			VanillaItems::DIAMOND()->setCount(5),
+			VanillaItems::DIAMOND()->setCount(12)
 		], "Bow", "textures/items/bow_standby");
 	}
 }

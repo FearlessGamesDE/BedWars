@@ -2,13 +2,13 @@
 
 namespace BedWars\shop\item;
 
-use pocketmine\item\ItemFactory;
-use pocketmine\item\ItemIds;
+use pocketmine\block\VanillaBlocks;
+use pocketmine\item\VanillaItems;
 
 class Gold extends BedWarsItem
 {
 	public function __construct()
 	{
-		parent::__construct(ItemFactory::get(ItemIds::GOLD_BLOCK, 0, 8), ItemFactory::get(ItemIds::IRON_INGOT, 0, 6), "Gold");
+		parent::__construct(VanillaBlocks::GOLD()->asItem()->setCount(8), VanillaItems::IRON_INGOT()->setCount(6), "Gold");
 	}
 }

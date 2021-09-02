@@ -3,20 +3,19 @@
 namespace BedWars\utils;
 
 use pocketmine\entity\Entity;
+use pocketmine\entity\EntitySizeInfo;
+use pocketmine\entity\Location;
 use pocketmine\entity\projectile\Snowball;
 use pocketmine\math\Vector3;
-use pocketmine\network\mcpe\protocol\MoveActorAbsolutePacket;
-use pocketmine\Player;
+use pocketmine\nbt\tag\CompoundTag;
+use pocketmine\player\Player;
 use pocketmine\Server;
 
 class TextEntity extends Snowball
 {
-	public $width = 0.0;
-	public $height = 0.0;
-
 	public function __construct(Vector3 $position, string $text)
 	{
-		parent::__construct(Server::getInstance()->getDefaultLevel(), self::createBaseNBT($position));
+		parent::__construct(Location::fromObject($position, Server::getInstance()->getWorldManager()->getDefaultWorld()), null);
 		$this->setImmobile();
 		$this->setNameTag($text);
 		$this->setNameTagVisible();
@@ -24,9 +23,14 @@ class TextEntity extends Snowball
 		$this->setScale(0.000001);
 	}
 
+	protected function getInitialSizeInfo(): EntitySizeInfo
+	{
+		return new EntitySizeInfo(0, 0);
+	}
+
 	public function update(Player $player): void
 	{
-		unset($this->hasSpawned[$player->getLoaderId()]);
+		unset($this->hasSpawned[spl_object_id($player)]);
 		$this->spawnTo($player);
 	}
 
@@ -34,7 +38,7 @@ class TextEntity extends Snowball
 	{
 	}
 
-	protected function initEntity(): void
+	protected function initEntity(CompoundTag $nbt): void
 	{
 	}
 
@@ -44,10 +48,6 @@ class TextEntity extends Snowball
 	}
 
 	public function onNearbyBlockChange(): void
-	{
-	}
-
-	public function sendData($player, ?array $data = null): void
 	{
 	}
 }

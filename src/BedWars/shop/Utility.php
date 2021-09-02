@@ -8,23 +8,19 @@ use BedWars\shop\item\ItemManager;
 use BedWars\shop\item\PermanentBedWarsItem;
 use BedWars\utils\TextEntity;
 use jojoe77777\FormAPI\SimpleForm;
-use pocketmine\block\BlockFactory;
-use pocketmine\block\BlockIds;
-use pocketmine\level\Level;
+use pocketmine\block\VanillaBlocks;
 use pocketmine\network\mcpe\protocol\PlaySoundPacket;
-use pocketmine\Player;
 use pocketmine\math\Vector3;
+use pocketmine\player\Player;
+use pocketmine\world\World;
 
 class Utility
 {
 	/**
 	 * @var BedWarsItem[]
 	 */
-	private static $items = [];
-	/**
-	 * @var Vector3
-	 */
-	private $position;
+	private static array $items = [];
+	private Vector3 $position;
 
 	public static function addItem(BedWarsItem $item): void
 	{
@@ -39,12 +35,12 @@ class Utility
 	public function __construct(Vector3 $position)
 	{
 		$this->position = $position->add(0.5, 0, 0.5);
-		(new TextEntity($this->position->add(0, 1), "§eUtility Shop"))->spawnToAll();
+		(new TextEntity($this->position->add(0, 1, 0), "§eUtility Shop"))->spawnToAll();
 	}
 
-	public function load(Level $level): void
+	public function load(World $world): void
 	{
-		$level->setBlock($this->position, BlockFactory::get(BlockIds::STONECUTTER));
+		$world->setBlock($this->position, VanillaBlocks::LEGACY_STONECUTTER());
 	}
 
 	/**
@@ -60,22 +56,22 @@ class Utility
 					$prev = $player->getInventory()->getItem($player->getInventory()->getHeldItemIndex());
 					if (ItemManager::get($prev->getName()) instanceof PermanentBedWarsItem) {
 						foreach ($player->getInventory()->addItem($item->getItem($player)) as $i) {
-							$player->getLevel()->dropItem($player, $i);
+							$player->getWorld()->dropItem($player->getPosition(), $i);
 						}
 					} else {
 						$player->getInventory()->setItem($player->getInventory()->getHeldItemIndex(), $item->getItem($player));
 						foreach ($player->getInventory()->addItem($prev) as $i) {
-							$player->getLevel()->dropItem($player, $i);
+							$player->getWorld()->dropItem($player->getPosition(), $i);
 						}
 					}
 					$pk = new PlaySoundPacket();
 					$pk->soundName = "note.bell";
 					$pk->pitch = 1;
 					$pk->volume = 100;
-					$pk->x = $player->getX();
-					$pk->y = $player->getY();
-					$pk->z = $player->getZ();
-					$player->dataPacket($pk);
+					$pk->x = $player->getPosition()->getX();
+					$pk->y = $player->getPosition()->getY();
+					$pk->z = $player->getPosition()->getZ();
+					$player->getNetworkSession()->sendDataPacket($pk);
 					Messages::send($player, "bought", ["{item}" => $item->getItem($player)->getName(), "{cost}" => Shop::getCost($item->getBaseCost())]);
 				} else {
 					Messages::send($player, "not-enough");

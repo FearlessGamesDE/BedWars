@@ -2,13 +2,12 @@
 
 namespace BedWars\shop\item;
 
-use pocketmine\item\ItemFactory;
-use pocketmine\item\ItemIds;
+use pocketmine\item\VanillaItems;
 
 class MLGWaterBucket extends BedWarsItem
 {
 	public function __construct()
 	{
-		parent::__construct(ItemFactory::get(ItemIds::BUCKET, ItemIds::FLOWING_WATER), ItemFactory::get(ItemIds::IRON_INGOT, 0, 8), "MLG Water Bucket", "textures/items/bucket_water");
+		parent::__construct(VanillaItems::WATER_BUCKET(), VanillaItems::IRON_INGOT()->setCount(8), "MLG Water Bucket", "textures/items/bucket_water");
 	}
 }

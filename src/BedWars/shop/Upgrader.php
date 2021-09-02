@@ -6,49 +6,36 @@ use BedWars\Messages;
 use BedWars\shop\item\ItemManager;
 use BedWars\shop\item\TieredBedWarsItem;
 use BedWars\utils\TextEntity;
-use pocketmine\block\BlockFactory;
-use pocketmine\block\BlockIds;
-use pocketmine\level\Level;
+use pocketmine\block\VanillaBlocks;
 use pocketmine\network\mcpe\protocol\PlaySoundPacket;
-use pocketmine\Player;
 use pocketmine\math\Vector3;
+use pocketmine\player\Player;
+use pocketmine\world\World;
 
 class Upgrader
 {
-	/**
-	 * @var Vector3
-	 */
-	private $position;
-	/**
-	 * @var bool
-	 */
-	private $armor;
-	/**
-	 * @var TextEntity
-	 */
-	private $item;
-	/**
-	 * @var TextEntity
-	 */
-	private $cost;
+	private Vector3 $position;
+	private bool $armor;
+	private TextEntity $item;
+	private TextEntity $cost;
 
 	/**
 	 * Shop constructor.
 	 * @param Vector3 $position
-	 * @param string $type
+	 * @param string  $type
 	 */
 	public function __construct(Vector3 $position, string $type)
 	{
 		$this->position = $position->add(0.5, 0, 0.5);
 		$this->armor = $type === "ARMOR";
-		(new TextEntity($this->position->add(0, 1.3), $this->armor ? "§eArmor Upgrader" : "§eTool Upgrader"))->spawnToAll();
-		$this->item = new TextEntity($this->position->add(0, 1), "");
-		$this->cost = new TextEntity($this->position->add(0, 0.7), "");
+		(new TextEntity($this->position->add(0, 1.3, 0), $this->armor ? "§eArmor Upgrader" : "§eTool Upgrader"))->spawnToAll();
+		$this->item = new TextEntity($this->position->add(0, 1, 0), "");
+		$this->cost = new TextEntity($this->position->add(0, 0.7, 0), "");
 	}
 
-	public function load(Level $level): void
+	public function load(World $level): void
 	{
-		$level->setBlock($this->position, BlockFactory::get($this->armor ? BlockIds::ENCHANTING_TABLE : BlockIds::ANVIL));
+		$level->setBlock($this->position, $this->armor ? VanillaBlocks::ENCHANTING_TABLE() : VanillaBlocks::ANVIL());
 	}
 
 	/**
@@ -67,7 +54,7 @@ class Upgrader
 					$pk->x = $this->position->getX();
 					$pk->y = $this->position->getY();
 					$pk->z = $this->position->getZ();
-					$player->dataPacket($pk);
+					$player->getNetworkSession()->sendDataPacket($pk);
 					Messages::send($player, "upgraded", ["{item}" => "Armor", "{cost}" => Shop::getCost(Armor::getCost($player->getName()))]);
 					Armor::upgrade($player);
 					ShopManager::upgraderTick($player);
@@ -90,7 +77,7 @@ class Upgrader
 						$pk->x = $this->position->getX();
 						$pk->y = $this->position->getY();
 						$pk->z = $this->position->getZ();
-						$player->dataPacket($pk);
+						$player->getNetworkSession()->sendDataPacket($pk);
 						Messages::send($player, "upgraded", ["{item}" => $item->getName(), "{cost}" => Shop::getCost($item->getCost($player))]);
 						$item->upgrade($player);
 						ShopManager::upgraderTick($player);
@@ -108,7 +95,7 @@ class Upgrader
 
 	/**
 	 * @param Player $player
-	 * @param int $slot
+	 * @param int    $slot
 	 */
 	public function tick(Player $player, int $slot): void
 	{

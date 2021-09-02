@@ -8,26 +8,19 @@ use BedWars\player\PlayerManager;
 use BedWars\team\TeamManager;
 use BedWars\utils\TeamColor;
 use jojoe77777\FormAPI\SimpleForm;
-use LobbySystem\packets\server\PlayPacket;
-use pocketmine\item\ItemFactory;
 use pocketmine\item\ItemIds;
-use pocketmine\Player;
+use pocketmine\item\VanillaItems;
+use pocketmine\player\Player;
 use pocketmine\Server;
 
 class HudManager
 {
 	public static function send(Player $player): void
 	{
-		$compass = ItemFactory::get(ItemIds::COMPASS);
-		$compass->setCustomName("§6Teleporter");
-		$paper = ItemFactory::get(ItemIds::PAPER);
-		$paper->setCustomName("§bNext Game");
-		$bed = ItemFactory::get(ItemIds::BED);
-		$bed->setCustomName("§cLeave Game");
 		$player->getInventory()->setContents([
-			0 => $compass,
-			7 => $paper,
-			8 => $bed
+			0 => VanillaItems::COMPASS()->setCustomName("§6Teleporter"),
+			7 => VanillaItems::PAPER()->setCustomName("§bNext Game"),
+			8 => VanillaItems::RED_BED()->setCustomName("§cLeave Game")
 		]);
 	}
 
@@ -44,16 +37,14 @@ class HudManager
 							}
 						}
 					}
-					if($players === []){
+					if ($players === []) {
 						return true;
 					}
 					$form = new SimpleForm(static function (Player $player, ?int $data = null) use ($players) {
 						if ($data !== null) {
 							$p = $players[$data] ?? "";
-							if($p->isPlayer()){
-								if (($pl = Server::getInstance()->getPlayerExact($p->getName())) instanceof Player) {
-									$player->teleport($pl);
-								}
+							if ($p->isPlayer() && ($pl = Server::getInstance()->getPlayerExact($p->getName())) instanceof Player) {
+								$player->teleport($pl->getPosition());
 							}
 						}
 					});
@@ -65,9 +56,9 @@ class HudManager
 					break;
 				case ItemIds::PAPER:
 					StarGateAtlantis::getInstance()->transferPlayer($player, "lobby");
-					if($player->getNameTag() !== "undefined"){
+					if ($player->getNameTag() !== "undefined") {
 						$player->setNameTag("undefined");
-						Server::getInstance()->dispatchCommand($player, "play " . BedWars::getId());
+						Server::getInstance()->dispatchCommand($player, "play " . BedWars::getGamemodeId());
 					}
 					break;
 				case ItemIds::BED:

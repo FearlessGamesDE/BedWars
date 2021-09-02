@@ -4,18 +4,15 @@ namespace BedWars\shop\item;
 
 use BedWars\player\PlayerManager;
 use pocketmine\item\Item;
-use pocketmine\Player;
+use pocketmine\player\Player;
 
 abstract class PermanentBedWarsItem extends TieredBedWarsItem
 {
-	/**
-	 * @var string
-	 */
-	private $slot;
+	private string $slot;
 	/**
 	 * @var int[]
 	 */
-	private $data = [];
+	private array $data = [];
 
 	/**
 	 * PermanentBedWarsItem constructor.

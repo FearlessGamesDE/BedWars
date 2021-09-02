@@ -2,14 +2,14 @@
 
 namespace BedWars\generator;
 
-use BedWars\team\TeamManager;
+use BedWars\BedWars;
 use BedWars\utils\TextEntity;
-use pocketmine\entity\Entity;
+use pocketmine\entity\Location;
 use pocketmine\entity\object\ItemEntity;
-use pocketmine\item\ItemFactory;
-use pocketmine\item\ItemIds;
-use pocketmine\level\Position;
+use pocketmine\item\Item;
+use pocketmine\item\VanillaItems;
 use pocketmine\math\Vector3;
+use pocketmine\world\Position;
 use UnexpectedValueException;
 
 class Generator
@@ -18,42 +18,26 @@ class Generator
 	public const TYPE_EMERALD = 1;
 	public const TYPE_DIAMONDS = 2;
 
-	/**
-	 * @var int
-	 */
-	private $type;
-	/**
-	 * @var Position
-	 */
-	private $position;
-	/**
-	 * @var int
-	 */
-	private $nextSpawn;
-	/**
-	 * @var ItemEntity
-	 */
-	private $entity;
-	/**
-	 * @var TextEntity
-	 */
-	private $next;
+	private int $type;
+	private Position $position;
+	private mixed $nextSpawn;
+	private ItemEntity $entity;
+	private ?TextEntity $next;
 
 	/**
 	 * Generator constructor.
-	 * @param int $type
+	 * @param int      $type
 	 * @param Position $position
 	 */
 	public function __construct(int $type, Position $position)
 	{
 		$this->type = $type;
-		$this->position = Position::fromObject($position->add(0.5, 0, 0.5), $position->getLevel());
-		(new TextEntity($this->position->add(0, 1.3), $this->getName()))->spawnToAll();
-		switch ($this->type) {
-			case self::TYPE_EMERALD:
-			case self::TYPE_DIAMONDS:
-				$this->next = new TextEntity($this->position->add(0, 1), "Next: §e" . $this->nextSpawn . "s");
-		}
+		$this->position = Position::fromObject($position->add(0.5, 0, 0.5), $position->getWorld());
+		(new TextEntity($this->position->add(0, 1.3, 0), $this->getName()))->spawnToAll();
+		$this->next = match ($this->type) {
+			self::TYPE_EMERALD, self::TYPE_DIAMONDS => new TextEntity($this->position->add(0, 1, 0), "Next: §e" . $this->nextSpawn . "s"),
+			self::TYPE_IRON => null
+		};
 		GeneratorManager::add($this);
 		$this->nextSpawn = max(1, self::getRate($this->type));
 	}
@@ -62,26 +46,21 @@ class Generator
 	{
 		if (--$this->nextSpawn <= 0) {
 			$this->nextSpawn = max(1, self::getRate($this->type));
-			$count = (int)max(1, 1 / self::getRate($this->type));
+			$count = (int) max(1, 1 / self::getRate($this->type));
 			if (isset($this->entity) && !$this->entity->isClosed()) {
-				if ($this->entity->getItem()->count + $count <= self::getMax($this->type)) {
-					$this->entity->getItem()->count += $count;
+				if ($this->entity->getItem()->getCount() + $count <= self::getMax($this->type)) {
+					$this->entity->getItem()->setCount($this->entity->getItem()->getCount() + $count);
 				}
 				$this->entity->respawnToAll(); //No despawning, update count
 			} else {
-				$nbt = Entity::createBaseNBT($this->position, new Vector3(0, 0.2, 0), lcg_value() * 360, 0);
-				$nbt->setShort("Health", 5);
-				$nbt->setShort("PickupDelay", 0);
-				$nbt->setShort("Age", -0x8000);
-				$itemTag = ItemFactory::get(self::getMaterial($this->type), 0, $count)->nbtSerialize();
-				$itemTag->setName("Item");
-				$nbt->setTag($itemTag);
-				$this->entity = new ItemEntity($this->position->getLevel(), $nbt);
+				$this->entity = new ItemEntity(Location::fromObject($this->position, $this->position->getWorld(), lcg_value() * 360), self::getMaterial($this->type)->setCount($count));
+				$this->entity->setDespawnDelay(ItemEntity::NEVER_DESPAWN);
+				$this->entity->setMotion(new Vector3(0, 0.2, 0));
 				$this->entity->spawnToAll();
 			}
 		}
 
-		if (isset($this->next)) {
+		if ($this->next !== null) {
 			$this->next->setNameTag("Next: §e" . $this->nextSpawn . "s");
 			$this->next->respawnToAll();
 		}
@@ -89,13 +68,13 @@ class Generator
 
 	/**
 	 * @param int $type
-	 * @return float
+	 * @return int
 	 */
-	private static function getRate(int $type)
+	private static function getRate(int $type): int
 	{
 		switch ($type) {
 			case self::TYPE_IRON:
-				return 16 / TeamManager::$teamSize;
+				return floor(16 / BedWars::getTeamSize());
 			case self::TYPE_EMERALD:
 				return 90;
 			case self::TYPE_DIAMONDS:
@@ -123,17 +102,17 @@ class Generator
 
 	/**
 	 * @param int $type
-	 * @return int
+	 * @return Item
 	 */
-	private static function getMaterial(int $type): int
+	private static function getMaterial(int $type): Item
 	{
 		switch ($type) {
 			case self::TYPE_IRON:
-				return ItemIds::IRON_INGOT;
+				return VanillaItems::IRON_INGOT();
 			case self::TYPE_EMERALD:
-				return ItemIds::EMERALD;
+				return VanillaItems::EMERALD();
 			case self::TYPE_DIAMONDS:
-				return ItemIds::DIAMOND;
+				return VanillaItems::DIAMOND();
 		}
 		throw new UnexpectedValueException("Invalid Generator type " . $type);
 	}

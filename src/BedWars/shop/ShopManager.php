@@ -2,44 +2,39 @@
 
 namespace BedWars\shop;
 
+use pocketmine\block\tile\Sign;
 use pocketmine\math\Vector3;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\Server;
-use pocketmine\tile\Sign;
 
 class ShopManager
 {
 	/**
 	 * @var Shop[]|Upgrader[]|Utility[]
 	 */
-	private static $shops = [];
+	private static array $shops = [];
 	/**
 	 * @var int[]
 	 */
-	private static $cooldown = [];
+	private static array $cooldown = [];
 
 	/**
 	 * @param Sign $sign
 	 */
 	public static function read(Sign $sign): void
 	{
-		switch(strtoupper($sign->getLine(0))){
-			case "SHOP":
-				self::$shops[$sign->getX() . ":" . $sign->getY() . ":" . $sign->getZ()] = new Shop($sign, $sign->getLine(1));
-				break;
-			case "UPGRADER":
-				self::$shops[$sign->getX() . ":" . $sign->getY() . ":" . $sign->getZ()] = new Upgrader($sign, $sign->getLine(1));
-				break;
-			case "UTILITY":
-				self::$shops[$sign->getX() . ":" . $sign->getY() . ":" . $sign->getZ()] = new Utility($sign);
-		}
+		self::$shops[$sign->getPosition()->getX() . ":" . $sign->getPosition()->getY() . ":" . $sign->getPosition()->getZ()] = match (strtoupper($sign->getText()->getLine(0))) {
+			"SHOP" => new Shop($sign->getPosition(), $sign->getText()->getLine(1)),
+			"UPGRADER" => new Upgrader($sign->getPosition(), $sign->getText()->getLine(1)),
+			"UTILITY" => new Utility($sign->getPosition()),
+		};
 	}
 
 	public static function load(): void
 	{
-		$level = Server::getInstance()->getDefaultLevel();
+		$world = Server::getInstance()->getWorldManager()->getDefaultWorld();
 		foreach (self::$shops as $shop) {
-			$shop->load($level);
+			$shop->load($world);
 		}
 	}
 
@@ -47,9 +42,9 @@ class ShopManager
 	 * @param int $x
 	 * @param int $y
 	 * @param int $z
-	 * @return Shop|null
+	 * @return Shop|Utility|Upgrader|null
 	 */
-	public static function get(int $x, int $y, int $z)
+	public static function get(int $x, int $y, int $z): Shop|Utility|Upgrader|null
 	{
 		return self::$shops[$x . ":" . $y . ":" . $z] ?? null;
 	}

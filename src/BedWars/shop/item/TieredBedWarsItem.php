@@ -4,20 +4,19 @@ namespace BedWars\shop\item;
 
 use pocketmine\item\Durable;
 use pocketmine\item\Item;
-use pocketmine\item\ItemFactory;
-use pocketmine\item\ItemIds;
-use pocketmine\Player;
+use pocketmine\item\VanillaItems;
+use pocketmine\player\Player;
 
 abstract class TieredBedWarsItem extends BedWarsItem
 {
 	/**
 	 * @var Item[]
 	 */
-	protected $tiers;
+	protected array $tiers;
 	/**
 	 * @var Item[]
 	 */
-	protected $costs;
+	protected array $costs;
 
 	/**
 	 * TieredBedWarsItem constructor.
@@ -58,7 +57,7 @@ abstract class TieredBedWarsItem extends BedWarsItem
 	}
 
 	/**
-	 * @param Player $player
+	 * @param Player   $player
 	 * @param int|null $slot
 	 * @return int
 	 */
@@ -72,7 +71,7 @@ abstract class TieredBedWarsItem extends BedWarsItem
 
 	/**
 	 * @param Player $player
-	 * @param int $tier
+	 * @param int    $tier
 	 * @return void
 	 */
 	public function setTierOf(Player $player, int $tier): void
@@ -92,13 +91,13 @@ abstract class TieredBedWarsItem extends BedWarsItem
 	}
 
 	/**
-	 * @param Player $player
+	 * @param Player   $player
 	 * @param int|null $slot
 	 * @return Item
 	 */
 	public function getCost(Player $player, int $slot = null): Item
 	{
-		return $this->costs[$this->getTierOf($player, $slot) + 1] ?? ItemFactory::get(ItemIds::EMERALD, 0, 64);
+		return $this->costs[$this->getTierOf($player, $slot) + 1] ?? VanillaItems::EMERALD()->setCount(64);
 	}
 
 	/**

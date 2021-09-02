@@ -13,7 +13,8 @@ use BedWars\Stats;
 use BedWars\utils\TeamColor;
 use pocketmine\math\Vector3;
 use pocketmine\network\mcpe\protocol\PlaySoundPacket;
-use pocketmine\Player;
+use pocketmine\player\GameMode;
+use pocketmine\player\Player;
 use pocketmine\Server;
 
 class Team
@@ -21,25 +22,16 @@ class Team
 	/**
 	 * @var BedWarsPlayer[]
 	 */
-	private $players;
-	/**
-	 * @var int
-	 */
-	private $color;
-	/**
-	 * @var bool
-	 */
-	private $bed = true;
-	/**
-	 * @var Vector3
-	 */
-	private $spawn;
+	private array $players;
+	private int $color;
+	private bool $bed = true;
+	private Vector3 $spawn;
 
 	/**
 	 * Team constructor.
 	 * @param BedWarsPlayer[] $players
-	 * @param int $color
-	 * @param array $data
+	 * @param int             $color
+	 * @param array           $data
 	 */
 	public function __construct(array $players, int $color, array $data)
 	{
@@ -55,7 +47,7 @@ class Team
 			if (($p = Server::getInstance()->getPlayerExact($player->getName())) instanceof Player) {
 				$p->setNameTag(TeamColor::getChatFormat($this) . $p->getName());
 				$p->teleport($this->spawn);
-				$p->setGamemode(Player::SURVIVAL);
+				$p->setGamemode(GameMode::SURVIVAL());
 				$player->setStatus(BedWarsPlayer::ALIVE);
 				foreach (ItemManager::getPermanentItems() as $item) {
 					$item->downgrade($p);
@@ -123,17 +115,17 @@ class Team
 		$pk->pitch = 1;
 		$pk->volume = 1000;
 		foreach (Server::getInstance()->getOnlinePlayers() as $p) {
-			$pk->x = $p->getX();
-			$pk->y = $p->getY();
-			$pk->z = $p->getZ();
-			$p->dataPacket($pk);
+			$pk->x = $p->getPosition()->getX();
+			$pk->y = $p->getPosition()->getY();
+			$pk->z = $p->getPosition()->getZ();
+			$p->getNetworkSession()->sendDataPacket($pk);
 		}
 		foreach ($this->getPlayers() as $p) {
 			Messages::send($p->getName(), "bed-destroyed", ["{player}" => TeamColor::getChatFormat(PlayerManager::get($player)->getTeam()) . $player], false);
 			Messages::title($p->getName(), "destroyed");
 		}
 		Messages::send(array_filter(Server::getInstance()->getOnlinePlayers(), function ($p) {
-			return PlayerManager::get($p->getName())->getTeam() !== $this->color;
+			return PlayerManager::get($p->getName())->getTeam() !== $this;
 		}), "bed-destroyed-other", ["{team}" => TeamColor::getChatFormat($this) . TeamColor::getName($this), "{player}" => TeamColor::getChatFormat(PlayerManager::get($player)->getTeam()) . $player], false);
 		ScoreboardHandler::update();
 		return true;

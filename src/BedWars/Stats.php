@@ -7,51 +7,19 @@ use platz1de\StatAPI\Stat;
 
 class Stats
 {
-	/**
-	 * @var Module
-	 */
-	private static $module;
-
-	/**
-	 * @var Stat
-	 */
-	public static $kills;
-	/**
-	 * @var Stat
-	 */
-	public static $deaths;
-
-	/**
-	 * @var Stat
-	 */
-	public static $finalKills;
-	/**
-	 * @var Stat
-	 */
-	public static $finalDeaths;
-
-	/**
-	 * @var Stat
-	 */
-	public static $beds;
-
-	/**
-	 * @var Stat
-	 */
-	public static $wins;
-	/**
-	 * @var Stat
-	 */
-	public static $losses;
-
-	/**
-	 * @var array
-	 */
-	public static $killCounter = [];
+	private static Module $module;
+	public static Stat $kills;
+	public static Stat $deaths;
+	public static Stat $finalKills;
+	public static Stat $finalDeaths;
+	public static Stat $beds;
+	public static Stat $wins;
+	public static Stat $losses;
+	public static array $killCounter = [];
 
 	public static function load(): void
 	{
-		self::$module = Module::get(BedWars::getId());
+		self::$module = Module::get(BedWars::getGamemodeId());
 
 		self::$kills = Stat::get("kills", self::$module);
 		self::$kills->setDisplayName("Kills");

@@ -6,8 +6,8 @@ use BedWars\player\PlayerManager;
 use BedWars\utils\TeamColor;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
-use pocketmine\item\ItemIds;
-use pocketmine\Player;
+use pocketmine\item\VanillaItems;
+use pocketmine\player\Player;
 
 class Armor
 {
@@ -23,34 +23,34 @@ class Armor
 	{
 		return [
 			[
-				ItemFactory::get(ItemIds::LEATHER_CAP),
-				ItemFactory::get(ItemIds::LEATHER_CHESTPLATE),
-				ItemFactory::get(ItemIds::LEATHER_PANTS),
-				ItemFactory::get(ItemIds::LEATHER_BOOTS)
+				VanillaItems::LEATHER_CAP(),
+				VanillaItems::LEATHER_TUNIC(),
+				VanillaItems::LEATHER_PANTS(),
+				VanillaItems::LEATHER_BOOTS()
 			],
 			[
-				ItemFactory::get(ItemIds::LEATHER_CAP),
-				ItemFactory::get(ItemIds::LEATHER_CHESTPLATE),
-				ItemFactory::get(ItemIds::CHAIN_LEGGINGS),
-				ItemFactory::get(ItemIds::LEATHER_BOOTS)
+				VanillaItems::LEATHER_CAP(),
+				VanillaItems::LEATHER_TUNIC(),
+				VanillaItems::CHAINMAIL_LEGGINGS(),
+				VanillaItems::LEATHER_BOOTS()
 			],
 			[
-				ItemFactory::get(ItemIds::IRON_HELMET),
-				ItemFactory::get(ItemIds::LEATHER_CHESTPLATE),
-				ItemFactory::get(ItemIds::CHAIN_LEGGINGS),
-				ItemFactory::get(ItemIds::IRON_BOOTS)
+				VanillaItems::IRON_HELMET(),
+				VanillaItems::LEATHER_TUNIC(),
+				VanillaItems::CHAINMAIL_LEGGINGS(),
+				VanillaItems::IRON_BOOTS()
 			],
 			[
-				ItemFactory::get(ItemIds::IRON_HELMET),
-				ItemFactory::get(ItemIds::LEATHER_CHESTPLATE),
-				ItemFactory::get(ItemIds::DIAMOND_LEGGINGS),
-				ItemFactory::get(ItemIds::IRON_BOOTS)
+				VanillaItems::IRON_HELMET(),
+				VanillaItems::LEATHER_TUNIC(),
+				VanillaItems::DIAMOND_LEGGINGS(),
+				VanillaItems::IRON_BOOTS()
 			],
 			[
-				ItemFactory::get(ItemIds::DIAMOND_HELMET),
-				ItemFactory::get(ItemIds::LEATHER_CHESTPLATE),
-				ItemFactory::get(ItemIds::DIAMOND_LEGGINGS),
-				ItemFactory::get(ItemIds::DIAMOND_BOOTS)
+				VanillaItems::DIAMOND_HELMET(),
+				VanillaItems::LEATHER_TUNIC(),
+				VanillaItems::DIAMOND_LEGGINGS(),
+				VanillaItems::DIAMOND_BOOTS()
 			]
 		];
 	}
@@ -61,16 +61,16 @@ class Armor
 	public static function getCosts(): array
 	{
 		return [
-			ItemFactory::get(ItemIds::AIR), //7 Bars
-			ItemFactory::get(ItemIds::EMERALD), //9 Bars (+2)
-			ItemFactory::get(ItemIds::EMERALD, 0, 2), //11 Bars (+2)
-			ItemFactory::get(ItemIds::EMERALD, 0, 3), //13 Bars (+2)
-			ItemFactory::get(ItemIds::EMERALD, 0, 4), //15 Bars (+2)
+			ItemFactory::air(), //7 Bars
+			VanillaItems::EMERALD(), //9 Bars (+2)
+			VanillaItems::EMERALD()->setCount(2), //11 Bars (+2)
+			VanillaItems::EMERALD()->setCount(3), //13 Bars (+2)
+			VanillaItems::EMERALD()->setCount(4), //15 Bars (+2)
 		];
 	}
 
 	/**
-	 * @param int $tier
+	 * @param int    $tier
 	 * @param string $player
 	 * @return \pocketmine\item\Armor[]
 	 */
@@ -78,7 +78,7 @@ class Armor
 	{
 		$color = TeamColor::getDyeColor(PlayerManager::get($player)->getTeam());
 		return array_map(static function ($armor) use ($color) {
-			$armor->setCustomColor($color);
+			$armor->setCustomColor($color->getRgbValue());
 			$armor->setUnbreakable();
 			return $armor;
 		}, self::getTiers()[$tier]);
@@ -109,6 +109,6 @@ class Armor
 	 */
 	public static function getCost(string $player): Item
 	{
-		return self::getCosts()[self::getTierOf($player) + 1] ?? ItemFactory::get(ItemIds::EMERALD, 0, 64);
+		return self::getCosts()[self::getTierOf($player) + 1] ?? VanillaItems::EMERALD()->setCount(64);
 	}
 }

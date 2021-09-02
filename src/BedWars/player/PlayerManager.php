@@ -7,7 +7,7 @@ class PlayerManager
 	/**
 	 * @var BedWarsPlayer[]
 	 */
-	private static $players = [];
+	private static array $players = [];
 
 	/**
 	 * @param BedWarsPlayer $player

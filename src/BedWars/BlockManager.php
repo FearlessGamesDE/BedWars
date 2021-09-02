@@ -9,7 +9,7 @@ class BlockManager
 	/**
 	 * @var bool[]
 	 */
-	private static $allowed = [];
+	private static array $allowed = [];
 
 	/**
 	 * @param Vector3 $position

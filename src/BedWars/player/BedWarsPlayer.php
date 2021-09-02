@@ -11,12 +11,8 @@ use BedWars\shop\item\ItemManager;
 use BedWars\Stats;
 use BedWars\team\Team;
 use BedWars\utils\TeamColor;
-use EasyDuels\EasyDuels;
-use pocketmine\entity\Entity;
-use pocketmine\math\Vector3;
-use pocketmine\network\mcpe\protocol\AddActorPacket;
-use pocketmine\network\mcpe\protocol\PlaySoundPacket;
-use pocketmine\Player;
+use pocketmine\player\GameMode;
+use pocketmine\player\Player;
 use pocketmine\Server;
 
 class BedWarsPlayer
@@ -25,37 +21,16 @@ class BedWarsPlayer
 	public const ALIVE = 1;
 	public const DEAD = 2;
 
-	/**
-	 * @var string
-	 */
-	private $name;
-	/**
-	 * @var Team
-	 */
-	private $team;
-	/**
-	 * @var int
-	 */
-	private $status = self::SPECTATOR;
-	/**
-	 * @var int
-	 */
-	private $deadTicks = 0;
-	/**
-	 * @var string
-	 */
-	private $lastDamager;
-	/**
-	 * @var array
-	 */
-	private $slots = [
+	private string $name;
+	private Team $team;
+	private int $status = self::SPECTATOR;
+	private int $deadTicks = 0;
+	private string $lastDamager;
+	private array $slots = [
 		"Sword" => 0,
 		"Pickaxe" => 1,
 	];
-	/**
-	 * @var int
-	 */
-	private $cooldown = 0;
+	private int $cooldown = 0;
 
 	/**
 	 * BedWarsPlayer constructor.
@@ -116,7 +91,7 @@ class BedWarsPlayer
 	{
 		if (($player = Server::getInstance()->getPlayerExact($this->name)) instanceof Player) {
 			$player->setHealth(20);
-			$player->removeAllEffects();
+			$player->getEffects()->clear();
 			Stats::$deaths->changeScore($this->name, 1);
 
 			if ($this->team->hasBed()) {
@@ -142,12 +117,12 @@ class BedWarsPlayer
 			unset($this->lastDamager);
 			foreach ($player->getInventory()->getContents() as $item) {
 				if (!ItemManager::get($item->getName()) instanceof BedWarsItem) {
-					$player->getLevel()->dropItem($player, $item);
+					$player->getWorld()->dropItem($player->getPosition(), $item);
 				}
 				$player->getInventory()->removeItem($item);
 			}
 			$player->getArmorInventory()->setContents([]);
-			$player->setGamemode(Player::SPECTATOR);
+			$player->setGamemode(GameMode::SPECTATOR());
 		}
 	}
 
@@ -159,9 +134,9 @@ class BedWarsPlayer
 				$this->setStatus(self::DEAD);
 			} else {
 				HudManager::send($player);
-				$player->setGamemode(Player::SPECTATOR);
+				$player->setGamemode(GameMode::SPECTATOR());
 			}
-			$player->teleport($player->getLevel()->getSpawnLocation());
+			$player->teleport($player->getWorld()->getSpawnLocation());
 		}
 	}
 
@@ -171,9 +146,9 @@ class BedWarsPlayer
 			if (--$this->deadTicks < 0) {
 				if (($player = Server::getInstance()->getPlayerExact($this->getName())) instanceof Player) {
 					$player->teleport($this->team->getSpawn());
-					$player->setGamemode(Player::SURVIVAL);
+					$player->setGamemode(GameMode::SURVIVAL());
 					$player->setHealth(20);
-					$player->removeAllEffects();
+					$player->getEffects()->clear();
 					$this->status = self::ALIVE;
 					foreach (ItemManager::getPermanentItems() as $item) {
 						$item->downgrade($player);
@@ -198,7 +173,7 @@ class BedWarsPlayer
 
 	/**
 	 * @param string $id
-	 * @param int $slot
+	 * @param int    $slot
 	 */
 	public function setSlot(string $id, int $slot): void
 	{

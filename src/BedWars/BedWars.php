@@ -2,30 +2,25 @@
 
 namespace BedWars;
 
-use alemiz\sga\StarGateAtlantis;
 use BedWars\generator\Generator;
 use BedWars\generator\GeneratorManager;
 use BedWars\player\BedWarsPlayer;
 use BedWars\player\PlayerManager;
-use BedWars\shop\item\ItemManager;
 use BedWars\shop\ShopManager;
 use BedWars\team\Team;
 use BedWars\team\TeamManager;
-use BedWars\utils\Bed;
 use BedWars\utils\Compass;
-use BedWars\utils\NumberGenerator;
 use BedWars\utils\TeamColor;
 use Exception;
 use LobbySystem\server\VirtualServer;
-use pocketmine\block\Block;
-use pocketmine\block\BlockFactory;
-use pocketmine\level\Level;
+use LobbySystem\utils\WorldLoader;
+use pocketmine\block\tile\Sign;
+use pocketmine\block\VanillaBlocks;
 use pocketmine\math\Vector3;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\scheduler\TaskHandler;
 use pocketmine\Server;
-use pocketmine\tile\Chest;
-use pocketmine\tile\Sign;
+use pocketmine\world\World;
 use UnexpectedValueException;
 
 class BedWars extends VirtualServer
@@ -34,39 +29,27 @@ class BedWars extends VirtualServer
 	public const PLAYING = 1;
 	public const AFTER_GAME = 2;
 
-	/**
-	 * @var int
-	 */
-	private static $status = self::PRE_GAME;
-	/**
-	 * @var TaskHandler
-	 */
-	private static $ticker;
-	/**
-	 * @var string
-	 */
-	private static $id;
+	private static int $status = self::PRE_GAME;
+	private static TaskHandler $ticker;
 
 	public function onInit(): void
 	{
-		// TODO: Implement onInit() method.
+		$world = Server::getInstance()->getWorldManager()->getDefaultWorld();
+		if ($world instanceof World) {
+			$world->setTime(World::TIME_NOON);
+			$world->stopTime();
+		}
+		Loader::getInstance()->getScheduler()->scheduleDelayedTask(new ClosureTask(function (): void {
+			$this->start();
+		}), 20);
 	}
 
-	/**
-	 * @return string
-	 */
-	public static function getId(): string
-	{
-		return self::$id;
-	}
-
-	/** @noinspection PhpUnusedParameterInspection */
 	public function start(): void
 	{
 		self::$status = self::PLAYING;
 		TeamManager::start();
 		ScoreboardHandler::update();
-		self::$ticker = $this->getScheduler()->scheduleRepeatingTask(new ClosureTask(function (int $currentTick): void {
+		self::$ticker = Loader::getInstance()->getScheduler()->scheduleRepeatingTask(new ClosureTask(function (): void {
 			$this->tick();
 		}), 20);
 	}
@@ -75,8 +58,7 @@ class BedWars extends VirtualServer
 	{
 		try {
 			$winner = $this->getWinner();
-		} catch (Exception $exception) {
-
+		} catch (Exception) {
 		}
 
 		if (isset($winner)) {
@@ -111,7 +93,6 @@ class BedWars extends VirtualServer
 
 	/**
 	 * @param Team $winner
-	 * @noinspection PhpUnusedParameterInspection
 	 */
 	public function end(Team $winner): void
 	{
@@ -146,15 +127,14 @@ class BedWars extends VirtualServer
 			return TeamColor::getChatFormat(PlayerManager::get($player)->getTeam()) . $player . " §r- " . $score;
 		}, array_keys(Stats::$killCounter), array_values(Stats::$killCounter));
 		Messages::send(Server::getInstance()->getOnlinePlayers(), "end", ["{team}" => TeamColor::getChatFormat($winner) . TeamColor::getName($winner), "{winners}" => implode(", ", $winners), "{killtop}" => implode("\n", array_slice($killtop, 0, 3))], false);
-		$this->getScheduler()->scheduleDelayedTask(new ClosureTask(static function (int $currentTick): void {
+		Loader::getInstance()->getScheduler()->scheduleDelayedTask(new ClosureTask(static function (): void {
 			foreach (Server::getInstance()->getOnlinePlayers() as $player) {
-				Server::getInstance()->dispatchCommand($player, "play " . BedWars::getId());
-				StarGateAtlantis::getInstance()->transferPlayer($player, "lobby");
+				Server::getInstance()->dispatchCommand($player, "play " . BedWars::getGamemodeId());
 			}
 		}), 20 * 15);
-		$this->getScheduler()->scheduleDelayedTask(new ClosureTask(function (int $currentTick): void {
-			$this->getServer()->shutdown();
-		}), 20 * 20);
+		Loader::getInstance()->getScheduler()->scheduleDelayedTask(new ClosureTask(function (): void {
+			Server::getInstance()->shutdown();
+		}), 20 * 25);
 	}
 
 	/**
@@ -167,48 +147,43 @@ class BedWars extends VirtualServer
 
 	public static function scanMap(): void
 	{
-		$level = Server::getInstance()->getDefaultLevel();
-		if (!$level instanceof Level) {
+		$world = Server::getInstance()->getWorldManager()->getDefaultWorld();
+		if (!$world instanceof World) {
 			Server::getInstance()->getLogger()->critical("No Level found! Stopping ASAP...");
 			Server::getInstance()->shutdown();
 			return;
 		}
 
-		for ($x = -10; $x <= 10; $x++) {
-			for ($z = -10; $z <= 10; $z++) {
-				$level->loadChunk($x, $z);
-			}
-		}
-		foreach ($level->getTiles() as $tile) {
+		foreach (WorldLoader::getTiles($world) as $tile) {
 			if ($tile instanceof Sign) {
-				switch (strtoupper($tile->getLine(0))) {
+				switch (strtoupper($tile->getText()->getLine(0))) {
 					case "SPAWN":
-						TeamManager::cache(["team " . TeamColor::fromName($tile->getLine(1)) => ["spawn" => $tile->asVector3()]]);
-						$level->setBlock($tile, BlockFactory::get(Block::AIR));
+						TeamManager::cache(["team " . TeamColor::fromName($tile->getText()->getLine(1)) => ["spawn" => $tile->getPosition()]]);
+						$world->setBlock($tile->getPosition(), VanillaBlocks::AIR());
 						for ($x = -3; $x <= 3; $x++) {
 							for ($z = -3; $z <= 3; $z++) {
 								for ($y = -1; $y <= 3; $y++) {
-									BlockManager::deny($tile->add(new Vector3($x, $y, $z)));
+									BlockManager::deny($tile->getPosition()->addVector(new Vector3($x, $y, $z)));
 								}
 							}
 						}
 						break;
 					case "SPAWNER":
-						switch (strtoupper($tile->getLine(1))) {
+						switch (strtoupper($tile->getText()->getLine(1))) {
 							case "EMERALD":
-								new Generator(Generator::TYPE_EMERALD, $tile);
+								new Generator(Generator::TYPE_EMERALD, $tile->getPosition());
 								break;
 							case "DIAMOND":
-								new Generator(Generator::TYPE_DIAMONDS, $tile);
+								new Generator(Generator::TYPE_DIAMONDS, $tile->getPosition());
 								break;
 							default:
-								TeamManager::cache(["team " . TeamColor::fromName($tile->getLine(1)) => ["spawner" => $tile]]);
+								TeamManager::cache(["team " . TeamColor::fromName($tile->getText()->getLine(1)) => ["spawner" => $tile]]);
 						}
-						$level->setBlock($tile, BlockFactory::get(Block::AIR));
+						$world->setBlock($tile->getPosition(), VanillaBlocks::AIR());
 						for ($x = -2; $x <= 2; $x++) {
 							for ($z = -2; $z <= 2; $z++) {
 								for ($y = -1; $y <= 3; $y++) {
-									BlockManager::deny($tile->add(new Vector3($x, $y, $z)));
+									BlockManager::deny($tile->getPosition()->addVector(new Vector3($x, $y, $z)));
 								}
 							}
 						}
@@ -218,29 +193,29 @@ class BedWars extends VirtualServer
 						for ($x = -1; $x <= 1; $x++) {
 							for ($z = -1; $z <= 1; $z++) {
 								for ($y = -1; $y <= 1; $y++) {
-									BlockManager::deny($tile->add(new Vector3($x, $y, $z)));
+									BlockManager::deny($tile->getPosition()->addVector(new Vector3($x, $y, $z)));
 								}
 							}
 						}
 						break;
 					case "UPGRADER":
 						ShopManager::read($tile);
-						$level->setBlock($tile, BlockFactory::get(Block::AIR));
+						$world->setBlock($tile->getPosition(), VanillaBlocks::AIR());
 						for ($x = -1; $x <= 1; $x++) {
 							for ($z = -1; $z <= 1; $z++) {
 								for ($y = -1; $y <= 1; $y++) {
-									BlockManager::deny($tile->add(new Vector3($x, $y, $z)));
+									BlockManager::deny($tile->getPosition()->addVector(new Vector3($x, $y, $z)));
 								}
 							}
 						}
 						break;
 					case "UTILITY":
 						ShopManager::read($tile);
-						$level->setBlock($tile, BlockFactory::get(Block::AIR));
+						$world->setBlock($tile->getPosition(), VanillaBlocks::AIR());
 						for ($x = -2; $x <= 2; $x++) {
 							for ($z = -2; $z <= 2; $z++) {
 								for ($y = -1; $y <= 3; $y++) {
-									BlockManager::deny($tile->add(new Vector3($x, $y, $z)));
+									BlockManager::deny($tile->getPosition()->addVector(new Vector3($x, $y, $z)));
 								}
 							}
 						}

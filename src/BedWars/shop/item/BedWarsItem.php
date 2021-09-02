@@ -4,38 +4,26 @@ namespace BedWars\shop\item;
 
 use pocketmine\item\Durable;
 use pocketmine\item\Item;
-use pocketmine\Player;
+use pocketmine\player\Player;
 
 abstract class BedWarsItem
 {
-	/**
-	 * @var Item
-	 */
-	private $item;
-	/**
-	 * @var Item
-	 */
-	private $cost;
-	/**
-	 * @var string
-	 */
-	private $name;
-	/**
-	 * @var string
-	 */
-	private $image;
+	private Item $item;
+	private Item $cost;
+	private string $name;
+	private string $image;
 
 	/**
 	 * BedWarsItem constructor.
-	 * @param Item $item
-	 * @param Item $cost
-	 * @param string|null $name
+	 * @param Item   $item
+	 * @param Item   $cost
+	 * @param string $name
 	 * @param string $image
 	 */
-	public function __construct(Item $item, Item $cost, string $name = null, string $image = "")
+	public function __construct(Item $item, Item $cost, string $name = "", string $image = "")
 	{
 		$this->image = $image;
-		if ($name === null) {
+		if ($name === "") {
 			$name = $item->getName();
 		}
 		$this->name = $name;
@@ -73,7 +61,6 @@ abstract class BedWarsItem
 	/**
 	 * @param Player $player
 	 * @return Item
-	 * @noinspection PhpUnusedParameterInspection
 	 */
 	public function getItem(Player $player): Item
 	{

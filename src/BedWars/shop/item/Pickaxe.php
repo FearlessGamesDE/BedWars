@@ -2,35 +2,29 @@
 
 namespace BedWars\shop\item;
 
-use pocketmine\item\enchantment\Enchantment;
 use pocketmine\item\enchantment\EnchantmentInstance;
+use pocketmine\item\enchantment\VanillaEnchantments;
 use pocketmine\item\ItemFactory;
-use pocketmine\item\ItemIds;
+use pocketmine\item\VanillaItems;
 
 class Pickaxe extends PermanentBedWarsItem
 {
 	public function __construct()
 	{
-		$last = ItemFactory::get(ItemIds::DIAMOND_PICKAXE);
-		$last->addEnchantment(new EnchantmentInstance(Enchantment::getEnchantment(Enchantment::EFFICIENCY), 5));
-
-		$last2 = ItemFactory::get(ItemIds::DIAMOND_PICKAXE);
-		$last2->addEnchantment(new EnchantmentInstance(Enchantment::getEnchantment(Enchantment::EFFICIENCY), 2));
-
 		parent::__construct([
-			ItemFactory::get(ItemIds::WOODEN_PICKAXE),
-			ItemFactory::get(ItemIds::STONE_PICKAXE),
-			ItemFactory::get(ItemIds::IRON_PICKAXE),
-			ItemFactory::get(ItemIds::DIAMOND_PICKAXE),
-			$last2,
-			$last
+			VanillaItems::WOODEN_PICKAXE(),
+			VanillaItems::STONE_PICKAXE(),
+			VanillaItems::IRON_PICKAXE(),
+			VanillaItems::DIAMOND_PICKAXE(),
+			VanillaItems::DIAMOND_PICKAXE()->addEnchantment(new EnchantmentInstance(VanillaEnchantments::EFFICIENCY(), 2)),
+			VanillaItems::DIAMOND_PICKAXE()->addEnchantment(new EnchantmentInstance(VanillaEnchantments::EFFICIENCY(), 5))
 		], [
-			ItemFactory::get(ItemIds::AIR),
-			ItemFactory::get(ItemIds::DIAMOND),
-			ItemFactory::get(ItemIds::DIAMOND, 0, 2),
-			ItemFactory::get(ItemIds::DIAMOND, 0, 4),
-			ItemFactory::get(ItemIds::DIAMOND, 0, 8),
-			ItemFactory::get(ItemIds::DIAMOND, 0, 16)
+			ItemFactory::air(),
+			VanillaItems::DIAMOND(),
+			VanillaItems::DIAMOND()->setCount(2),
+			VanillaItems::DIAMOND()->setCount(4),
+			VanillaItems::DIAMOND()->setCount(8),
+			VanillaItems::DIAMOND()->setCount(16)
 		], "Pickaxe");
 	}
 }

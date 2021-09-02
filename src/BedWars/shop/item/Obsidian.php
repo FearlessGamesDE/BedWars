@@ -2,13 +2,13 @@
 
 namespace BedWars\shop\item;
 
-use pocketmine\item\ItemFactory;
-use pocketmine\item\ItemIds;
+use pocketmine\block\VanillaBlocks;
+use pocketmine\item\VanillaItems;
 
 class Obsidian extends BedWarsItem
 {
 	public function __construct()
 	{
-		parent::__construct(ItemFactory::get(ItemIds::OBSIDIAN, 0, 8), ItemFactory::get(ItemIds::EMERALD, 0, 4), "Obsidian");
+		parent::__construct(VanillaBlocks::OBSIDIAN()->asItem()->setCount(8), VanillaItems::EMERALD()->setCount(4), "Obsidian");
 	}
 }

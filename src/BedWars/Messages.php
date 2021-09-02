@@ -2,13 +2,13 @@
 
 namespace BedWars;
 
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\Server;
 use pocketmine\utils\Config;
 
 class Messages
 {
-	private static $messages = [];
+	private static array $messages = [];
 
 	public static function load(string $dir): void
 	{

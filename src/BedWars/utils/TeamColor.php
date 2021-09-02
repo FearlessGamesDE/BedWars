@@ -3,7 +3,9 @@
 namespace BedWars\utils;
 
 use BedWars\team\Team;
-use pocketmine\utils\Color;
+use pocketmine\block\utils\DyeColor;
+use pocketmine\color\Color;
+use pocketmine\item\Dye;
 use pocketmine\utils\TextFormat;
 use UnexpectedValueException;
 
@@ -130,27 +132,27 @@ class TeamColor
 
 	/**
 	 * @param Team $team
-	 * @return Color
+	 * @return DyeColor
 	 */
-	public static function getDyeColor(Team $team): Color
+	public static function getDyeColor(Team $team): DyeColor
 	{
 		switch ($team->getColor()) {
 			case self::ORANGE:
-				return Color::fromRGB(0xFFAA00);
+				return DyeColor::ORANGE();
 			case self::AQUA:
-				return Color::fromRGB(0x55FFFF);
+				return DyeColor::CYAN();
 			case self::YELLOW:
-				return Color::fromRGB(0xFFFF55);
+				return DyeColor::YELLOW();
 			case self::GREEN:
-				return Color::fromRGB(0x55FF55);
+				return DyeColor::LIME();
 			case self::PINK:
-				return Color::fromRGB(0xFF55FF);
+				return DyeColor::PINK();
 			case self::GRAY:
-				return Color::fromRGB(0xAAAAAA);
+				return DyeColor::LIGHT_GRAY();
 			case self::BLUE:
-				return Color::fromRGB(0x5555FF);
+				return DyeColor::BLUE();
 			case self::RED:
-				return Color::fromRGB(0xFF5555);
+				return DyeColor::RED();
 		}
 		throw new UnexpectedValueException("Invalid Team " . $team->getColor());
 	}

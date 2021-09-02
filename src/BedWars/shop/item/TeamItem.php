@@ -5,18 +5,18 @@ namespace BedWars\shop\item;
 use BedWars\player\PlayerManager;
 use BedWars\team\Team;
 use pocketmine\item\Item;
-use pocketmine\Player;
+use pocketmine\player\Player;
 
 abstract class TeamItem extends BedWarsItem
 {
 	/**
 	 * @var Item[]
 	 */
-	private $teams;
+	private array $teams;
 
 	/**
 	 * TeamItem constructor.
-	 * @param Item $cost
+	 * @param Item   $cost
 	 * @param Item[] $teams
 	 * @param string $name
 	 */
@@ -47,7 +47,7 @@ abstract class TeamItem extends BedWarsItem
 	 * @param Player $player
 	 * @return Item
 	 */
-	public function getItem(Player $player):Item
+	public function getItem(Player $player): Item
 	{
 		return $this->getForTeam(PlayerManager::get($player->getName())->getTeam());
 	}

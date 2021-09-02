@@ -17,7 +17,7 @@ class Compass
 			$nearest = null;
 			foreach (Server::getInstance()->getOnlinePlayers() as $p) {
 				if (($pl = PlayerManager::get($p->getName()))->getStatus() === BedWarsPlayer::ALIVE && $pl->getTeam() !== $bedWarsPlayer->getTeam()) {
-					if ($nearest === null || $nearest->distance($player) > $p->distance($player)) {
+					if ($nearest === null || $nearest->getPosition()->distance($player->getPosition()) > $p->getPosition()->distance($player->getPosition())) {
 						$nearest = $p;
 					}
 				}
@@ -30,12 +30,12 @@ class Compass
 				$pk->z = $pk->z2 = 0;
 				$pk->dimension = DimensionIds::NETHER;
 			}else{
-				$pk->x = $pk->x2 = $nearest->getFloorX();
+				$pk->x = $pk->x2 = $nearest->getPosition()->getFloorX();
 				$pk->y = $pk->y2 = 100;
-				$pk->z = $pk->z2 = $nearest->getFloorZ();
+				$pk->z = $pk->z2 = $nearest->getPosition()->getFloorZ();
 				$pk->dimension = DimensionIds::OVERWORLD;
 			}
-			$player->dataPacket($pk);
+			$player->getNetworkSession()->sendDataPacket($pk);
 		}
 	}
 }

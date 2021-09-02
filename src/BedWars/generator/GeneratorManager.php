@@ -7,7 +7,7 @@ class GeneratorManager
 	/**
 	 * @var Generator[]
 	 */
-	private static $generators = [];
+	private static array $generators = [];
 
 	/**
 	 * @param Generator $generator

@@ -1,5 +1,5 @@
 name: BedWars
-main: BedWars\BedWars
+main: BedWars\Loader
 version: 1.0.0
 api: 4.0.0
 author: platz1de

@@ -3,18 +3,17 @@
 namespace BedWars\shop\item;
 
 use BedWars\shop\Utility;
-use Composer\Script\CommandEvent;
 
 class ItemManager
 {
 	/**
 	 * @var BedWarsItem[]
 	 */
-	private static $items = [];
+	private static array $items = [];
 	/**
 	 * @var PermanentBedWarsItem[]
 	 */
-	private static $permanentItems = [];
+	private static array $permanentItems = [];
 
 	public static function load(): void
 	{

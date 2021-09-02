@@ -6,48 +6,44 @@ use BedWars\Messages;
 use BedWars\shop\item\BedWarsItem;
 use BedWars\shop\item\ItemManager;
 use BedWars\shop\item\PermanentBedWarsItem;
+use pocketmine\block\tile\Sign;
+use pocketmine\block\utils\SignText;
 use pocketmine\item\Item;
 use pocketmine\item\ItemIds;
-use pocketmine\level\Level;
 use pocketmine\network\mcpe\protocol\PlaySoundPacket;
-use pocketmine\Player;
-use pocketmine\tile\Sign;
 use pocketmine\math\Vector3;
+use pocketmine\player\Player;
 use pocketmine\Server;
+use pocketmine\world\World;
 use UnexpectedValueException;
 
 class Shop
 {
-	/**
-	 * @var Vector3
-	 */
-	private $position;
-	/**
-	 * @var BedWarsItem
-	 */
-	private $type;
+	private Vector3 $position;
+	private BedWarsItem $type;
 
 	/**
 	 * Shop constructor.
 	 * @param Vector3 $position
-	 * @param string $type
+	 * @param string  $type
 	 */
 	public function __construct(Vector3 $position, string $type)
 	{
 		$this->position = $position;
-		$this->type = ItemManager::get($type);
-		if (!$this->type instanceof BedWarsItem) {
+		$item = ItemManager::get($type);
+		if (!$item instanceof BedWarsItem) {
 			Server::getInstance()->getLogger()->critical("Unknown Item '" . $type . "'");
 		}
+		$this->type = $item;
 	}
 
-	public function load(Level $level): void
+	public function load(World $level): void
 	{
 		$tile = $level->getTile($this->position);
 		if (!$tile instanceof Sign) {
 			throw new UnexpectedValueException("Invalid Shop position");
 		}
-		$tile->setText("§e§l" . $this->type->getRawItem()->getCount() . " " . $this->type->getName(), "", self::getCost($this->type->getBaseCost()));
+		$tile->setText(new SignText(["§e§l" . $this->type->getRawItem()->getCount() . " " . $this->type->getName(), "", self::getCost($this->type->getBaseCost())]));
 	}
 
 	/**
@@ -75,44 +71,44 @@ class Shop
 			$prev = $player->getInventory()->getItem($player->getInventory()->getHeldItemIndex());
 			if (ItemManager::get($prev->getName()) instanceof PermanentBedWarsItem) {
 				foreach ($player->getInventory()->addItem($result) as $item) {
-					$player->getLevel()->dropItem($player, $item);
+					$player->getWorld()->dropItem($player->getPosition(), $item);
 				}
 			} else {
 				$player->getInventory()->setItem($player->getInventory()->getHeldItemIndex(), $result);
 				foreach ($player->getInventory()->addItem($prev) as $item) {
-					$player->getLevel()->dropItem($player, $item);
+					$player->getWorld()->dropItem($player->getPosition(), $item);
 				}
 			}
 			$pk = new PlaySoundPacket();
 			$pk->soundName = "note.bell";
 			$pk->pitch = 1;
 			$pk->volume = 100;
-			$pk->x = $player->getX();
-			$pk->y = $player->getY();
-			$pk->z = $player->getZ();
-			$player->dataPacket($pk);
+			$pk->x = $player->getPosition()->getX();
+			$pk->y = $player->getPosition()->getY();
+			$pk->z = $player->getPosition()->getZ();
+			$player->getNetworkSession()->sendDataPacket($pk);
 			Messages::send($player, "bought", ["{item}" => $this->type->getItem($player)->getName(), "{cost}" => self::getCost($cost)]);
 		} elseif ($player->getInventory()->contains($this->type->getBaseCost())) {
 			$player->getInventory()->removeItem($this->type->getBaseCost());
 			$prev = $player->getInventory()->getItem($player->getInventory()->getHeldItemIndex());
 			if (ItemManager::get($prev->getName()) instanceof PermanentBedWarsItem) {
 				foreach ($player->getInventory()->addItem($this->type->getItem($player)) as $item) {
-					$player->getLevel()->dropItem($player, $item);
+					$player->getWorld()->dropItem($player->getPosition(), $item);
 				}
 			} else {
 				$player->getInventory()->setItem($player->getInventory()->getHeldItemIndex(), $this->type->getItem($player));
 				foreach ($player->getInventory()->addItem($prev) as $item) {
-					$player->getLevel()->dropItem($player, $item);
+					$player->getWorld()->dropItem($player->getPosition(), $item);
 				}
 			}
 			$pk = new PlaySoundPacket();
 			$pk->soundName = "note.bell";
 			$pk->pitch = 1;
 			$pk->volume = 100;
-			$pk->x = $player->getX();
-			$pk->y = $player->getY();
-			$pk->z = $player->getZ();
-			$player->dataPacket($pk);
+			$pk->x = $player->getPosition()->getX();
+			$pk->y = $player->getPosition()->getY();
+			$pk->z = $player->getPosition()->getZ();
+			$player->getNetworkSession()->sendDataPacket($pk);
 			Messages::send($player, "bought", ["{item}" => $this->type->getItem($player)->getName(), "{cost}" => self::getCost($this->type->getBaseCost())]);
 		} else {
 			Messages::send($player, "not-enough");

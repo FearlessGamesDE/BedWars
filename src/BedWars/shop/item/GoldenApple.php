@@ -4,11 +4,12 @@ namespace BedWars\shop\item;
 
 use pocketmine\item\ItemFactory;
 use pocketmine\item\ItemIds;
+use pocketmine\item\VanillaItems;
 
 class GoldenApple extends BedWarsItem
 {
 	public function __construct()
 	{
-		parent::__construct(ItemFactory::get(ItemIds::GOLDEN_APPLE), ItemFactory::get(ItemIds::IRON_INGOT, 0, 16), "Golden Apple", "textures/items/apple_golden");
+		parent::__construct(VanillaItems::GOLDEN_APPLE(), VanillaItems::IRON_INGOT()->setCount(16), "Golden Apple", "textures/items/apple_golden");
 	}
 }

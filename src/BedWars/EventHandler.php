@@ -2,7 +2,6 @@
 
 namespace BedWars;
 
-use alemiz\sga\events\CustomPacketEvent;
 use BedWars\player\BedWarsPlayer;
 use BedWars\player\PlayerManager;
 use BedWars\shop\item\ItemManager;
@@ -10,21 +9,26 @@ use BedWars\shop\item\PermanentBedWarsItem;
 use BedWars\shop\ShopManager;
 use BedWars\team\TeamManager;
 use BedWars\utils\TeamColor;
-use LobbySystem\packets\server\TeamPacket;
+use pocketmine\block\Air;
 use pocketmine\block\Bed;
 use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
-use pocketmine\block\BlockIds;
+use pocketmine\block\inventory\ChestInventory;
+use pocketmine\block\tile\Bed as BedTile;
+use pocketmine\block\tile\Chest;
 use pocketmine\block\TNT;
+use pocketmine\block\VanillaBlocks;
+use pocketmine\block\Water;
+use pocketmine\crafting\CraftingGrid;
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\block\BlockSpreadEvent;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\event\entity\EntityExplodeEvent;
+use pocketmine\event\entity\EntityItemPickupEvent;
 use pocketmine\event\inventory\CraftItemEvent;
 use pocketmine\event\inventory\InventoryOpenEvent;
-use pocketmine\event\inventory\InventoryPickupItemEvent;
 use pocketmine\event\inventory\InventoryTransactionEvent;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerBedEnterEvent;
@@ -37,8 +41,6 @@ use pocketmine\event\player\PlayerItemConsumeEvent;
 use pocketmine\event\player\PlayerItemHeldEvent;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerQuitEvent;
-use pocketmine\inventory\ChestInventory;
-use pocketmine\inventory\CraftingGrid;
 use pocketmine\inventory\PlayerCursorInventory;
 use pocketmine\inventory\PlayerInventory;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
@@ -48,25 +50,14 @@ use pocketmine\item\ItemIds;
 use pocketmine\item\Potion;
 use pocketmine\math\VoxelRayTrace;
 use pocketmine\network\mcpe\protocol\TakeItemActorPacket;
-use pocketmine\Player;
+use pocketmine\player\GameMode;
+use pocketmine\player\Player;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\Server;
-use pocketmine\tile\Bed as BedTile;
 use UnexpectedValueException;
 
 class EventHandler implements Listener
 {
-	/**
-	 * @param CustomPacketEvent $event
-	 */
-	public function onPacket(CustomPacketEvent $event): void
-	{
-		$packet = $event->getPacket();
-		if ($packet instanceof TeamPacket) {
-			TeamManager::register($packet->team);
-		}
-	}
-
 	/**
 	 * @param PlayerJoinEvent $event
 	 */
@@ -78,8 +69,8 @@ class EventHandler implements Listener
 		ScoreboardHandler::update();
 		switch (BedWars::getStatus()) {
 			case BedWars::PRE_GAME:
-				$event->getPlayer()->setGamemode(3);
-				$event->getPlayer()->teleport($event->getPlayer()->getLevel()->getSpawnLocation());
+				$event->getPlayer()->setGamemode(GameMode::SPECTATOR());
+				$event->getPlayer()->teleport($event->getPlayer()->getWorld()->getSpawnLocation());
 				Messages::send($event->getPlayer(), "wait-for-start");
 				break;
 			case BedWars::PLAYING:
@@ -89,14 +80,14 @@ class EventHandler implements Listener
 					$event->getPlayer()->setNameTag(TeamColor::getChatFormat($player->getTeam()) . $event->getPlayer()->getName());
 					$event->setJoinMessage(Messages::translate("prefix") . Messages::replace("rejoin", TeamColor::getChatFormat($player->getTeam()) . $player->getName()));
 				} else {
-					$event->getPlayer()->setGamemode(3);
-					$event->getPlayer()->teleport($event->getPlayer()->getLevel()->getSpawnLocation());
+					$event->getPlayer()->setGamemode(GameMode::SPECTATOR());
+					$event->getPlayer()->teleport($event->getPlayer()->getWorld()->getSpawnLocation());
 					HudManager::send($event->getPlayer());
 				}
 				break;
 			case BedWars::AFTER_GAME:
-				$event->getPlayer()->setGamemode(3);
-				$event->getPlayer()->teleport($event->getPlayer()->getLevel()->getSpawnLocation());
+				$event->getPlayer()->setGamemode(GameMode::SPECTATOR());
+				$event->getPlayer()->teleport($event->getPlayer()->getWorld()->getSpawnLocation());
 				HudManager::send($event->getPlayer());
 				break;
 		}
@@ -117,26 +108,27 @@ class EventHandler implements Listener
 	}
 
 	/**
-	 * @param InventoryPickupItemEvent $event
+	 * @param EntityItemPickupEvent $event
 	 */
-	public function onPickup(InventoryPickupItemEvent $event): void
+	public function onPickup(EntityItemPickupEvent $event): void
 	{
-		$inventory = $event->getInventory();
-		if ($inventory instanceof PlayerInventory) {
+		$entity = $event->getEntity();
+		if ($entity instanceof Player) {
+			$inventory = $entity->getInventory();
 			$players = array_filter(Server::getInstance()->getOnlinePlayers(), static function ($player) use ($inventory, $event) {
-				return $inventory->getHolder()->distance($player) < 2 and ($player->isCreative() or $player->getInventory()->canAddItem($event->getItem()->getItem()));
+				return $inventory->getHolder()->getPosition()->distance($player->getPosition()) < 2 and ($player->isCreative() or $player->getInventory()->canAddItem($event->getItem()));
 			});
 			$player = $players[array_rand($players)];
 
 			$pk = new TakeItemActorPacket();
 			$pk->eid = $player->getId();
 			$pk->target = $event->getItem()->getId();
-			Server::getInstance()->broadcastPacket($event->getItem()->getViewers(), $pk);
+			Server::getInstance()->getWorldManager()->getDefaultWorld()?->broadcastPacketToViewers($event->getOrigin()->getPosition(), $pk);
 
-			$player->getInventory()->addItem(clone $event->getItem()->getItem());
-			$event->getItem()->flagForDespawn();
+			$player->getInventory()->addItem(clone $event->getItem());
+			$event->getOrigin()->flagForDespawn();
 		}
-		$event->setCancelled();
+		$event->cancel();
 	}
 
 	/**
@@ -145,11 +137,11 @@ class EventHandler implements Listener
 	public function onDrop(PlayerDropItemEvent $event): void
 	{
 		if (($player = PlayerManager::get($event->getPlayer()->getName()))->getStatus() !== BedWarsPlayer::ALIVE) {
-			$event->setCancelled();
+			$event->cancel();
 		} else {
 			$bedWarsItem = ItemManager::get($event->getItem()->getName());
 			if ($bedWarsItem instanceof PermanentBedWarsItem) {
-				$event->setCancelled();
+				$event->cancel();
 				if ($event->getPlayer()->getCursorInventory()->contains($event->getItem()) || $event->getPlayer()->getCraftingGrid()->contains($event->getItem())) {
 					$old = $event->getPlayer()->getInventory()->getItem($player->getSlot($bedWarsItem->getSlot()));
 					if (ItemManager::get($old->getName()) instanceof PermanentBedWarsItem) {
@@ -189,14 +181,14 @@ class EventHandler implements Listener
 		if ($entity instanceof Player) {
 			$bedWarsPlayer = PlayerManager::get($entity->getName());
 			if ($bedWarsPlayer->getStatus() !== BedWarsPlayer::ALIVE) {
-				$event->setCancelled();
+				$event->cancel();
 				return;
 			}
 			if ($event instanceof EntityDamageByEntityEvent) {
 				$damager = $event->getDamager();
 				if ($damager instanceof Player) {
 					if (PlayerManager::get($damager->getName())->getTeam() === $bedWarsPlayer->getTeam()) {
-						$event->setCancelled();
+						$event->cancel();
 						return;
 					}
 					$bedWarsPlayer->damage($damager->getName());
@@ -205,7 +197,7 @@ class EventHandler implements Listener
 			if ($entity->getHealth() <= $event->getFinalDamage()) {
 				$bedWarsPlayer->kill();
 				$bedWarsPlayer->respawn();
-				$event->setCancelled();
+				$event->cancel();
 			}
 		}
 	}
@@ -216,10 +208,9 @@ class EventHandler implements Listener
 	public function onTransaction(InventoryTransactionEvent $event): void
 	{
 		if (($player = PlayerManager::get($event->getTransaction()->getSource()->getName()))->getStatus() !== BedWarsPlayer::ALIVE) {
-			$event->setCancelled();
+			$event->cancel();
 		} else {
 			foreach ($event->getTransaction()->getActions() as $action) {
-				Server::getInstance()->getLogger()->notice(get_class($action));
 				if ($action instanceof SlotChangeAction) {
 					$item = ItemManager::get($action->getTargetItem()->getName());
 					if ($action->getInventory() instanceof CraftingGrid) {
@@ -230,11 +221,11 @@ class EventHandler implements Listener
 						if ($action->getInventory() instanceof PlayerInventory) {
 							$player->setSlot($item->getSlot(), $action->getSlot());
 						} elseif (!$action->getInventory() instanceof PlayerCursorInventory) {
-							$event->setCancelled();
+							$event->cancel();
 							break;
 						}
 					} elseif ($action->getTargetItem() instanceof Armor) {
-						$event->setCancelled();
+						$event->cancel();
 						break;
 					}
 				}
@@ -261,49 +252,45 @@ class EventHandler implements Listener
 			if ($event->getBlock() instanceof Bed) {
 				/** @var Bed $bed */
 				$bed = $event->getBlock();
-				if ($bed->getOtherHalf() instanceof Bed && $event->getItem()->getId() === ItemIds::BRICK_BLOCK) {
-					$tile = $bed->getLevelNonNull()->getTile($bed);
-					if ($tile instanceof BedTile && $tile->getColor() === $p->getTeam()->getColor()) {
-						$first = array_merge($bed->getAllSides(), $bed->getOtherHalf()->getAllSides());
-						/** @var Block $block */
-						foreach ($first as $block) {
-							if (($block->getId() === BlockIds::AIR) && BlockManager::isAllowedToPlace($block)) {
-								$event->getPlayer()->getLevelNonNull()->setBlock($block, BlockFactory::get(BlockIds::GOLD_BLOCK));
-							}
-							foreach ($block->getAllSides() as $b) {
-								if (($b->getId() === BlockIds::AIR) && !in_array($b, $first, true) && BlockManager::isAllowedToPlace($b)) {
-									$event->getPlayer()->getLevelNonNull()->setBlock($b, BlockFactory::get(BlockIds::CONCRETE, $p->getTeam()->getColor()));
-								}
+				if ($bed->getOtherHalf() instanceof Bed && $event->getItem()->getId() === ItemIds::BRICK_BLOCK && $bed->getColor() === TeamColor::getDyeColor($p->getTeam())) {
+					$first = array_merge($bed->getAllSides(), $bed->getOtherHalf()->getAllSides());
+					foreach ($first as $block) {
+						if (($block instanceof Air) && BlockManager::isAllowedToPlace($block->getPosition())) {
+							$event->getPlayer()->getWorld()->setBlock($block->getPosition(), VanillaBlocks::GOLD());
+						}
+						foreach ($block->getAllSides() as $b) {
+							if (($b instanceof Air) && !in_array($b, $first, true) && BlockManager::isAllowedToPlace($b->getPosition())) {
+								$event->getPlayer()->getWorld()->setBlock($b->getPosition(), VanillaBlocks::CONCRETE()->setColor(TeamColor::getDyeColor($p->getTeam())));
 							}
 						}
-
-						$new = $event->getPlayer()->getInventory()->getItemInHand();
-						$new->pop();
-						$event->getPlayer()->getInventory()->setItemInHand($new);
-
-						$event->setCancelled();
 					}
+
+					$new = $event->getPlayer()->getInventory()->getItemInHand();
+					$new->pop();
+					$event->getPlayer()->getInventory()->setItemInHand($new);
+
+					$event->cancel();
 				}
 				return;
 			}
-			if (ShopManager::use($event->getPlayer(), $event->getBlock())) {
-				$event->setCancelled();
-			} elseif($p->canUseItem()){
+			if (ShopManager::use($event->getPlayer(), $event->getBlock()->getPosition())) {
+				$event->cancel();
+			} elseif ($p->canUseItem()) {
 				if ($event->getItem()->getId() === ItemIds::GLOWSTONE_DUST) {
 					$event->getPlayer()->teleport(PlayerManager::get($event->getPlayer()->getName())->getTeam()->getSpawn());
-					$event->setCancelled();
+					$event->cancel();
 
 					$new = $event->getPlayer()->getInventory()->getItemInHand();
 					$new->pop();
 					$event->getPlayer()->getInventory()->setItemInHand($new);
 					$p->useItem();
 				} elseif ($event->getItem()->getId() === ItemIds::BRICK_BLOCK) {
-					foreach (VoxelRayTrace::betweenPoints($event->getPlayer()->subtract(0, 1, 0), $event->getPlayer()->add($event->getPlayer()->getDirectionVector()->multiply(20))->add(0, 1)) as $block) {
-						if (($event->getBlock()->getLevelNonNull()->getBlock($block)->getId() === BlockIds::AIR) && BlockManager::isAllowedToPlace($block)) {
-							$event->getPlayer()->getLevelNonNull()->setBlock($block, BlockFactory::get(BlockIds::CONCRETE, $p->getTeam()->getColor()));
+					foreach (VoxelRayTrace::betweenPoints($event->getPlayer()->getPosition()->subtract(0, 1, 0), $event->getPlayer()->getPosition()->addVector($event->getPlayer()->getDirectionVector()->multiply(20))->add(0, 1, 0)) as $block) {
+						if (($event->getBlock()->getPosition()->getWorld()->getBlock($block) instanceof Air) && BlockManager::isAllowedToPlace($block)) {
+							$event->getPlayer()->getPosition()->getWorld()->setBlock($block, VanillaBlocks::CONCRETE()->setColor(TeamColor::getDyeColor($p->getTeam())));
 						}
 					}
-					$event->setCancelled();
+					$event->cancel();
 
 					$new = $event->getPlayer()->getInventory()->getItemInHand();
 					$new->pop();
@@ -312,7 +299,7 @@ class EventHandler implements Listener
 				}
 			}
 		} elseif (HudManager::handle($event->getPlayer())) {
-			$event->setCancelled();
+			$event->cancel();
 		}
 	}
 
@@ -322,11 +309,11 @@ class EventHandler implements Listener
 	public function onPlace(BlockPlaceEvent $event): void
 	{
 		$block = $event->getBlock();
-		if (!BlockManager::isAllowedToPlace($block)) {
-			$event->setCancelled();
+		if (!BlockManager::isAllowedToPlace($block->getPosition())) {
+			$event->cancel();
 		} elseif ($block instanceof TNT) {
 			$block->ignite();
-			$event->setCancelled();
+			$event->cancel();
 
 			$new = $event->getPlayer()->getInventory()->getItemInHand();
 			$new->pop();
@@ -340,16 +327,16 @@ class EventHandler implements Listener
 	public function onBreak(BlockBreakEvent $event): void
 	{
 		if ($event->getBlock() instanceof Bed) {
-			$bed = $event->getBlock()->getLevelNonNull()->getTile($event->getBlock());
+			$bed = $event->getBlock()->getPosition()->getWorld()->getTile($event->getBlock()->getPosition());
 			if ($bed instanceof BedTile && !TeamManager::get($bed->getColor())->destroyBed($event->getPlayer()->getName())) {
-				$event->setCancelled();
+				$event->cancel();
 			}
 			$event->setDrops([]);
 			return;
 		}
 
-		if (!BlockManager::isAllowedToBreak($event->getBlock())) {
-			$event->setCancelled();
+		if (!BlockManager::isAllowedToBreak($event->getBlock()->getPosition())) {
+			$event->cancel();
 		}
 	}
 
@@ -358,7 +345,7 @@ class EventHandler implements Listener
 	 */
 	public function onCraft(CraftItemEvent $event): void
 	{
-		$event->setCancelled();
+		$event->cancel();
 	}
 
 	/**
@@ -366,7 +353,7 @@ class EventHandler implements Listener
 	 */
 	public function onExhaust(PlayerExhaustEvent $event): void
 	{
-		$event->setCancelled();
+		$event->cancel();
 	}
 
 	/**
@@ -375,7 +362,7 @@ class EventHandler implements Listener
 	public function onExplode(EntityExplodeEvent $event): void
 	{
 		$event->setBlockList(array_filter($event->getBlockList(), static function ($block) {
-			return BlockManager::isAllowedToBreak($block) and !$block instanceof Bed;
+			return BlockManager::isAllowedToBreak($block->getPosition()) and !$block instanceof Bed;
 		}));
 	}
 
@@ -386,10 +373,10 @@ class EventHandler implements Listener
 	{
 		$item = $event->getItem();
 		if ($item instanceof Potion) {
-			$event->setCancelled();
+			$event->cancel();
 			$event->getPlayer()->getInventory()->removeItem($item);
 			foreach ($item->getAdditionalEffects() as $effect) {
-				$event->getPlayer()->addEffect($effect);
+				$event->getPlayer()->getEffects()->add($effect);
 			}
 		}
 	}
@@ -400,11 +387,13 @@ class EventHandler implements Listener
 	 */
 	public function onBucketEmpty(PlayerBucketEmptyEvent $event): void
 	{
-		$event->setCancelled();
-		$event->getPlayer()->getInventory()->setItemInHand(ItemFactory::get(ItemIds::AIR, 0, 0));
-		$event->getBlockClicked()->getLevelNonNull()->setBlock($event->getBlockClicked(), BlockFactory::get(BlockIds::WATER));
-		BedWars::getInstance()->getScheduler()->scheduleDelayedTask(new ClosureTask(static function (int $currentTick) use ($event) : void {
-			$event->getBlockClicked()->getLevelNonNull()->setBlock($event->getBlockClicked(), BlockFactory::get(BlockIds::AIR));
+		$event->cancel();
+		$event->getPlayer()->getInventory()->setItemInHand(ItemFactory::air());
+		$event->getBlockClicked()->getPosition()->getWorld()->setBlock($event->getBlockClicked()->getPosition(), VanillaBlocks::WATER());
+		Loader::getInstance()->getScheduler()->scheduleDelayedTask(new ClosureTask(static function () use ($event): void {
+			if ($event->getBlockClicked()->getPosition()->getWorld()->getBlock($event->getBlockClicked()->getPosition()) instanceof Water) {
+				$event->getBlockClicked()->getPosition()->getWorld()->setBlock($event->getBlockClicked()->getPosition(), VanillaBlocks::AIR());
+			}
 		}), 20);
 	}
 
@@ -413,7 +402,7 @@ class EventHandler implements Listener
 	 */
 	public function onSpread(BlockSpreadEvent $event): void
 	{
-		$event->setCancelled();
+		$event->cancel();
 	}
 
 	/**
@@ -421,7 +410,7 @@ class EventHandler implements Listener
 	 */
 	public function onSleep(PlayerBedEnterEvent $event): void
 	{
-		$event->setCancelled();
+		$event->cancel();
 	}
 
 	/**
@@ -431,13 +420,16 @@ class EventHandler implements Listener
 	{
 		$inventory = $event->getInventory();
 		if ($inventory instanceof ChestInventory && (($p = PlayerManager::get($event->getPlayer()->getName()))->isPlayer())) {
-			$name = explode(" ", $inventory->getHolder()->getName())[0];
-			try {
-				$team = TeamManager::get(TeamColor::fromName($name));
-				if ($p->getTeam() !== $team && ($team->hasBed() || $team->getAlivePlayers() > 0)) {
-					$event->setCancelled();
+			$tile = $event->getPlayer()->getWorld()->getTile($inventory->getHolder());
+			if ($tile instanceof Chest) {
+				$name = explode(" ", $tile->getName())[0];
+				try {
+					$team = TeamManager::get(TeamColor::fromName($name));
+					if ($p->getTeam() !== $team && ($team->hasBed() || $team->getAlivePlayers() > 0)) {
+						$event->cancel();
+					}
+				} catch (UnexpectedValueException) {
 				}
-			} catch (UnexpectedValueException $exception) {
 			}
 		}
 	}
@@ -448,7 +440,7 @@ class EventHandler implements Listener
 	 */
 	public function onChat(PlayerChatEvent $event): void
 	{
-		$event->setCancelled();
+		$event->cancel();
 
 		$all = 0;
 		$message = str_ireplace(["@everyone ", "@everyone", "@all ", "@all", "@a ", "@a"], "", $event->getMessage(), $all);

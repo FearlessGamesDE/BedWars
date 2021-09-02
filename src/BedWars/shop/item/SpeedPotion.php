@@ -2,13 +2,12 @@
 
 namespace BedWars\shop\item;
 
-use pocketmine\item\ItemFactory;
-use pocketmine\item\ItemIds;
+use pocketmine\item\VanillaItems;
 
 class SpeedPotion extends BedWarsItem
 {
 	public function __construct()
 	{
-		parent::__construct(ItemFactory::get(ItemIds::POTION, 16), ItemFactory::get(ItemIds::EMERALD), "Speed Potion", "textures/items/potion_bottle_moveSpeed");
+		parent::__construct(VanillaItems::STRONG_SWIFTNESS_POTION(), VanillaItems::EMERALD(), "Speed Potion", "textures/items/potion_bottle_moveSpeed");
 	}
 }

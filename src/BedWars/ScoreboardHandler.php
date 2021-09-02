@@ -5,11 +5,10 @@ namespace BedWars;
 use BedWars\player\PlayerManager;
 use BedWars\team\TeamManager;
 use BedWars\utils\TeamColor;
-//use pocketmine\network\mcpe\protocol\RemoveObjectivePacket;
 use pocketmine\network\mcpe\protocol\SetDisplayObjectivePacket;
 use pocketmine\network\mcpe\protocol\SetScorePacket;
 use pocketmine\network\mcpe\protocol\types\ScorePacketEntry;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\Server;
 
 class ScoreboardHandler
@@ -35,19 +34,19 @@ class ScoreboardHandler
 			self::changeEntry($player, 15, "§7" . date("d.m.Y H:i"));
 			self::setEntry($player, 14, "");
 			foreach ($teams as $i => $team) {
-				self::changeEntry($player, 13 - array_flip(array_keys($teams))[$i], ($p->getTeam() === $i ? $own[$i] : $team));
+				self::changeEntry($player, 13 - array_flip(array_keys($teams))[$i], ($p->getTeam()->getColor() === $i ? $own[$i] : $team));
 			}
 			self::setEntry($player, 5, "");
 			self::changeEntry($player, 4, "Kills: " . (Stats::$killCounter[$player->getName()] ?? 0));
 			self::setEntry($player, 3, "");
-			self::setEntry($player, 2, "§8Bedwars " . TeamManager::$teamCount . "x" . TeamManager::$teamSize);
+			self::setEntry($player, 2, "§8BedWars " . BedWars::getTeamCount() . "x" . BedWars::getTeamSize());
 			self::setEntry($player, 1, "§dFearless§fGames§7.de");
 		}
 	}
 
 	/**
 	 * @param Player $player
-	 * @param int $score
+	 * @param int    $score
 	 * @param string $msg
 	 */
 	public static function changeEntry(Player $player, int $score, string $msg): void
@@ -58,7 +57,7 @@ class ScoreboardHandler
 
 	/**
 	 * @param Player $player
-	 * @param int $score
+	 * @param int    $score
 	 * @param string $msg
 	 */
 	public static function setEntry(Player $player, int $score, string $msg): void
@@ -73,12 +72,12 @@ class ScoreboardHandler
 		$pk = new SetScorePacket();
 		$pk->type = SetScorePacket::TYPE_CHANGE;
 		$pk->entries = [$entry];
-		$player->sendDataPacket($pk);
+		$player->getNetworkSession()->sendDataPacket($pk);
 	}
 
 	/**
 	 * @param Player $player
-	 * @param int $score
+	 * @param int    $score
 	 */
 	public static function removeEntry(Player $player, int $score): void
 	{
@@ -92,7 +91,7 @@ class ScoreboardHandler
 		$pk = new SetScorePacket();
 		$pk->entries = [$entry];
 		$pk->type = SetScorePacket::TYPE_REMOVE;
-		$player->sendDataPacket($pk);
+		$player->getNetworkSession()->sendDataPacket($pk);
 	}
 
 	/**
@@ -107,17 +106,6 @@ class ScoreboardHandler
 		$pk->displayName = $title;
 		$pk->criteriaName = "dummy"; //Do not track anything
 		$pk->sortOrder = 1;
-		$player->sendDataPacket($pk);
+		$player->getNetworkSession()->sendDataPacket($pk);
 	}
-
-//	/**
-//	 * @param Player $player
-//	 * @deprecated
-//	 */
-//	public static function remove(Player $player): void
-//	{
-//		$pk = new RemoveObjectivePacket();
-//		$pk->objectiveName = "BedWars";
-//		$player->sendDataPacket($pk);
-//	}
 }

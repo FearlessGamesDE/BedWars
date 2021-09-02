@@ -2,13 +2,13 @@
 
 namespace BedWars\shop\item;
 
-use pocketmine\item\ItemFactory;
-use pocketmine\item\ItemIds;
+use pocketmine\block\VanillaBlocks;
+use pocketmine\item\VanillaItems;
 
 class Wood extends BedWarsItem
 {
 	public function __construct()
 	{
-		parent::__construct(ItemFactory::get(ItemIds::WOODEN_PLANKS, 0, 8), ItemFactory::get(ItemIds::IRON_INGOT, 0, 2), "Wood");
+		parent::__construct(VanillaBlocks::OAK_PLANKS()->asItem()->setCount(8), VanillaItems::IRON_INGOT()->setCount(2), "Wood");
 	}
 }
