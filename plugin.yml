@@ -1,0 +1,6 @@
+name: BedWars
+main: BedWars\BedWars
+version: 1.0.0
+api: 4.0.0
+author: platz1de
+depend: LobbySystem

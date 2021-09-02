@@ -1,0 +1,45 @@
+prefix: "§l§4Bed§fWars §r> "
+
+#Args: {player} {message}
+chat-spectator: "§7{player}: {message}"
+chat-team: "{player}§7: §f{message}"
+chat-all: "§6[ALL] {player}§7: §f{message}"
+
+#Args: {player}
+leave: "{player} §fleft the game"
+rejoin: "{player} §frejoined"
+death: "{player} §fdied"
+final-death: "{player} §fdied §l§bFinal Kill"
+
+#Args: {seconds}
+respawn-in: "You will be respawned in §e{seconds} seconds"
+
+game-over: "§cGame Over"
+victory: "§6VICTORY"
+destroyed: "§cBed Destroyed"
+die: "§cYou died"
+
+wait-for-start: "Wait for the game to start..."
+
+#Args: {killer} {player}
+kill: "{killer} §fkilled {player}"
+final-kill: "{killer} §fkilled {player} §l§bFinal Kill"
+
+not-enough: "§cYou don't have enough Items to buy this"
+not-upgradeable: "§cYou can't upgrade this Item"
+maxed: "§cThis Item is already maxed out"
+
+utility: "Click on a Button to buy the Item"
+
+#Args: {item} {cost}
+bought: "You bought {item} §rfor {cost}"
+upgraded: "You upgraded your {item} §rfor {cost}"
+
+#Args: {player}
+bed-destroyed: "§6---------------------------------------\n§8>\n§7> §c§fYour Bed was destroyed by §r{player}§r\n§8>\n§6---------------------------------------"
+
+#Args: {team} {player}
+bed-destroyed-other: "§6---------------------------------------\n§8>\n§7> {team} Bed §ewas destroyed by §r{player}§r\n§8>\n§6---------------------------------------"
+
+#Args: {team} {winners} {killtop}
+end: "§6---------------------------------------\n§8>\n§7> §eWinner: {team} §r- {winners}§r\n\n§eTop Killer:\n {killtop}\n§8>\n§6---------------------------------------"
