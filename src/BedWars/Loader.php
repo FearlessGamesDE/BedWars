@@ -23,7 +23,6 @@ class Loader extends PluginBase
 		self::$instance = $this;
 		VirtualServer::register(new BedWars());
 		Messages::load($this->getDataFolder());
-		Stats::load();
 		ItemManager::load();
 		BedWars::scanMap();
 		ShopManager::load();

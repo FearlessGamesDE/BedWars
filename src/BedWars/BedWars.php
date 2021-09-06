@@ -34,6 +34,7 @@ class BedWars extends VirtualServer
 
 	public function onInit(): void
 	{
+		Stats::load();
 		$world = Server::getInstance()->getWorldManager()->getDefaultWorld();
 		if ($world instanceof World) {
 			$world->setTime(World::TIME_NOON);
