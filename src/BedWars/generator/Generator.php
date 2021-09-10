@@ -20,7 +20,7 @@ class Generator
 
 	private int $type;
 	private Position $position;
-	private mixed $nextSpawn;
+	private int $nextSpawn;
 	private ItemEntity $entity;
 	private ?TextEntity $next;
 
@@ -34,12 +34,12 @@ class Generator
 		$this->type = $type;
 		$this->position = Position::fromObject($position->add(0.5, 0, 0.5), $position->getWorld());
 		(new TextEntity($this->position->add(0, 1.3, 0), $this->getName()))->spawnToAll();
+		$this->nextSpawn = max(1, self::getRate($this->type));
 		$this->next = match ($this->type) {
 			self::TYPE_EMERALD, self::TYPE_DIAMONDS => new TextEntity($this->position->add(0, 1, 0), "Next: §e" . $this->nextSpawn . "s"),
 			self::TYPE_IRON => null
 		};
 		GeneratorManager::add($this);
-		$this->nextSpawn = max(1, self::getRate($this->type));
 	}
 
 	public function tick(): void

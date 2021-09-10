@@ -11,7 +11,7 @@ class Concrete extends TeamItem
 	public function __construct()
 	{
 		parent::__construct(VanillaItems::IRON_INGOT(), array_map(static function ($team) {
-			return VanillaBlocks::CONCRETE()->setColor(DyeColor::getAll()[$team])->asItem()->setCount(8);
+			return VanillaBlocks::CONCRETE()->setColor(array_values(DyeColor::getAll())[$team])->asItem()->setCount(8);
 		}, range(0, 15)), "Concrete");
 	}
 }

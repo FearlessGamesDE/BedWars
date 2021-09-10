@@ -178,7 +178,7 @@ class BedWars extends VirtualServer
 								new Generator(Generator::TYPE_DIAMONDS, $tile->getPosition());
 								break;
 							default:
-								TeamManager::cache(["team " . TeamColor::fromName($tile->getText()->getLine(1)) => ["spawner" => $tile]]);
+								TeamManager::cache(["team " . TeamColor::fromName($tile->getText()->getLine(1)) => ["spawner" => $tile->getPosition()]]);
 						}
 						$world->setBlock($tile->getPosition(), VanillaBlocks::AIR());
 						for ($x = -2; $x <= 2; $x++) {
