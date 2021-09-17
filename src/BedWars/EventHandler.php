@@ -328,7 +328,7 @@ class EventHandler implements Listener
 	{
 		if ($event->getBlock() instanceof Bed) {
 			$bed = $event->getBlock()->getPosition()->getWorld()->getTile($event->getBlock()->getPosition());
-			if ($bed instanceof BedTile && !TeamManager::get($bed->getColor())->destroyBed($event->getPlayer()->getName())) {
+			if ($bed instanceof BedTile && !TeamManager::get(TeamColor::fromDyeColor($bed->getColor()))->destroyBed($event->getPlayer()->getName())) {
 				$event->cancel();
 			}
 			$event->setDrops([]);

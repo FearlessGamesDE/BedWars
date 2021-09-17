@@ -156,4 +156,31 @@ class TeamColor
 		}
 		throw new UnexpectedValueException("Invalid Team " . $team->getColor());
 	}
+
+	/**
+	 * @param DyeColor $team
+	 * @return int
+	 */
+	public static function fromDyeColor(DyeColor $team): int
+	{
+		switch ($team->id()) {
+			case DyeColor::ORANGE()->id():
+				return self::ORANGE;
+			case DyeColor::CYAN()->id():
+				return self::AQUA;
+			case DyeColor::YELLOW()->id():
+				return self::YELLOW;
+			case DyeColor::LIME()->id():
+				return self::GREEN;
+			case DyeColor::PINK()->id():
+				return self::PINK;
+			case DyeColor::LIGHT_GRAY()->id():
+				return self::GRAY;
+			case DyeColor::BLUE()->id():
+				return self::BLUE;
+			case DyeColor::RED()->id():
+				return self::RED;
+		}
+		throw new UnexpectedValueException("Invalid Team " . $team->name());
+	}
 }
