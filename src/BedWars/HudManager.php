@@ -7,7 +7,7 @@ use BedWars\player\BedWarsPlayer;
 use BedWars\player\PlayerManager;
 use BedWars\team\TeamManager;
 use BedWars\utils\TeamColor;
-use jojoe77777\FormAPI\SimpleForm;
+use BedWars\libs\jojoe77777\FormAPI\SimpleForm;
 use pocketmine\item\ItemIds;
 use pocketmine\item\VanillaItems;
 use pocketmine\player\Player;
