@@ -20,7 +20,7 @@ class Generator
 
 	private int $type;
 	private Position $position;
-	private int $nextSpawn;
+	private int $nextSpawn = 0;
 	private ItemEntity $entity;
 	private ?TextEntity $next;
 
@@ -34,7 +34,6 @@ class Generator
 		$this->type = $type;
 		$this->position = Position::fromObject($position->add(0.5, 0, 0.5), $position->getWorld());
 		(new TextEntity($this->position->add(0, 1.3, 0), $this->getName()))->spawnToAll();
-		$this->nextSpawn = max(1, self::getRate($this->type));
 		$this->next = match ($this->type) {
 			self::TYPE_EMERALD, self::TYPE_DIAMONDS => new TextEntity($this->position->add(0, 1, 0), "Next: §e" . $this->nextSpawn . "s"),
 			self::TYPE_IRON => null
@@ -51,10 +50,11 @@ class Generator
 				if ($this->entity->getItem()->getCount() + $count <= self::getMax($this->type)) {
 					$this->entity->getItem()->setCount($this->entity->getItem()->getCount() + $count);
 				}
+				$this->entity->setDespawnDelay(ItemEntity::MAX_DESPAWN_DELAY);
 				$this->entity->respawnToAll(); //No despawning, update count
 			} else {
 				$this->entity = new ItemEntity(Location::fromObject($this->position, $this->position->getWorld(), lcg_value() * 360), self::getMaterial($this->type)->setCount($count));
-				$this->entity->setDespawnDelay(ItemEntity::NEVER_DESPAWN);
+				$this->entity->setDespawnDelay(ItemEntity::MAX_DESPAWN_DELAY);
 				$this->entity->setMotion(new Vector3(0, 0.2, 0));
 				$this->entity->spawnToAll();
 			}
