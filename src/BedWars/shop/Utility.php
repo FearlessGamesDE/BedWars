@@ -7,7 +7,7 @@ use BedWars\shop\item\BedWarsItem;
 use BedWars\shop\item\ItemManager;
 use BedWars\shop\item\PermanentBedWarsItem;
 use BedWars\utils\TextEntity;
-use jojoe77777\FormAPI\SimpleForm;
+use BedWars\libs\jojoe77777\FormAPI\SimpleForm;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\network\mcpe\protocol\PlaySoundPacket;
 use pocketmine\math\Vector3;
