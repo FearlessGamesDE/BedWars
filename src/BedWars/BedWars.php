@@ -42,7 +42,7 @@ class BedWars extends VirtualServer
 		}
 		Loader::getInstance()->getScheduler()->scheduleDelayedTask(new ClosureTask(function (): void {
 			$this->start();
-		}), 20);
+		}), 5 * 20);
 	}
 
 	public function start(): void
