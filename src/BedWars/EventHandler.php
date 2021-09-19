@@ -253,7 +253,7 @@ class EventHandler implements Listener
 				/** @var Bed $bed */
 				$bed = $event->getBlock();
 				if ($bed->getOtherHalf() instanceof Bed && $event->getItem()->getId() === ItemIds::BRICK_BLOCK && $bed->getColor() === TeamColor::getDyeColor($p->getTeam())) {
-					$first = array_merge($bed->getAllSides(), $bed->getOtherHalf()->getAllSides());
+					$first = array_merge(iterator_to_array($bed->getAllSides()), iterator_to_array($bed->getOtherHalf()->getAllSides()));
 					foreach ($first as $block) {
 						if (($block instanceof Air) && BlockManager::isAllowedToPlace($block->getPosition())) {
 							$event->getPlayer()->getWorld()->setBlock($block->getPosition(), VanillaBlocks::GOLD());
